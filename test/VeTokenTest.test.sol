@@ -126,5 +126,4 @@ contract VeTokenTest is Test {
             "Locked amount did not increase as expected"
         );
     }
-
 }

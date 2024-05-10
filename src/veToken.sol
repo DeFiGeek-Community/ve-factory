@@ -8,7 +8,7 @@ pragma solidity ^0.8.24;
 //solhint-disable max-line-length
 //solhint-disable no-inline-assembly
 
-import "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./Interfaces/IToken.sol";
 
 /**

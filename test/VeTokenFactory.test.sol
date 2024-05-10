@@ -9,13 +9,13 @@ import "../src/VeTokenFactory.sol";
 // import "../src/veToken.sol";
 
 contract VeTokenFactoryTest is Test {
-    IVeTokenFactory veTokenFactory;
+    IVeTokenFactory factory;
     SampleToken token;
     address tokenAddr;
 
     function setUp() public {
         // VeTokenFactoryの実装をデプロイし、IVeTokenFactoryインターフェースを介してアクセス
-        veTokenFactory = IVeTokenFactory(address(new VeTokenFactory()));
+        factory = IVeTokenFactory(address(new VeTokenFactory()));
         token = new SampleToken(1e18);
         tokenAddr = address(token);
     }
@@ -29,11 +29,7 @@ contract VeTokenFactoryTest is Test {
         vm.recordLogs();
 
         // Create a new veToken
-        address veTokenAddr = veTokenFactory.createVeToken(
-            tokenAddr,
-            name,
-            symbol
-        );
+        address veTokenAddr = factory.createVeToken(tokenAddr, name, symbol);
 
         // Get the recorded logs
         Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -58,8 +54,9 @@ contract VeTokenFactoryTest is Test {
 
         // Access the mapping correctly
         // IVeTokenFactory.VeTokenInfo memory info = VeTokenFactory.getDeployedVeTokens(veTokenAddr);
-        IVeTokenFactory.VeTokenInfo memory info = veTokenFactory
-            .getDeployedVeTokens(tokenAddr);
+        IVeTokenFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
+            tokenAddr
+        );
 
         // Additional assertions to check the integrity of creation
         assertEq(info.tokenAddr, tokenAddr);
@@ -73,17 +70,17 @@ contract VeTokenFactoryTest is Test {
         SampleToken token3 = new SampleToken(1e20);
 
         // 3つのveTokenを作成
-        address veTokenAddr1 = veTokenFactory.createVeToken(
+        address veTokenAddr1 = factory.createVeToken(
             tokenAddr,
             "veTokenName1",
             "veTKN1"
         );
-        address veTokenAddr2 = veTokenFactory.createVeToken(
+        address veTokenAddr2 = factory.createVeToken(
             address(token2),
             "veTokenName2",
             "veTKN2"
         );
-        address veTokenAddr3 = veTokenFactory.createVeToken(
+        address veTokenAddr3 = factory.createVeToken(
             address(token3),
             "veTokenName3",
             "veTKN3"
@@ -97,12 +94,15 @@ contract VeTokenFactoryTest is Test {
         assertNotEq(veTokenAddr1, veTokenAddr3);
 
         // それぞれのveTokenの情報を確認
-        IVeTokenFactory.VeTokenInfo memory info1 = veTokenFactory
-            .getDeployedVeTokens(tokenAddr);
-        IVeTokenFactory.VeTokenInfo memory info2 = veTokenFactory
-            .getDeployedVeTokens(address(token2));
-        IVeTokenFactory.VeTokenInfo memory info3 = veTokenFactory
-            .getDeployedVeTokens(address(token3));
+        IVeTokenFactory.VeTokenInfo memory info1 = factory.getDeployedVeTokens(
+            tokenAddr
+        );
+        IVeTokenFactory.VeTokenInfo memory info2 = factory.getDeployedVeTokens(
+            address(token2)
+        );
+        IVeTokenFactory.VeTokenInfo memory info3 = factory.getDeployedVeTokens(
+            address(token3)
+        );
 
         assertEq(info1.name, "veTokenName1");
         assertEq(info2.name, "veTokenName2");
@@ -112,38 +112,39 @@ contract VeTokenFactoryTest is Test {
     function testCreateVeTokenWithInvalidAddress() public {
         // 無効なアドレスでveTokenを作成しようとするテスト
         vm.expectRevert("Token address cannot be the zero address."); // 期待されるエラーメッセージを指定
-        veTokenFactory.createVeToken(address(0), "veTokenName", "veTKN");
+        factory.createVeToken(address(0), "veTokenName", "veTKN");
     }
 
     function testCreateVeTokenWithEmptyName() public {
         // 名前が空の場合にリバートすることを確認
         vm.expectRevert("Name cannot be empty.");
-        veTokenFactory.createVeToken(tokenAddr, "", "veTKN");
+        factory.createVeToken(tokenAddr, "", "veTKN");
     }
 
     function testCreateVeTokenWithEmptySymbol() public {
         // シンボルが空の場合にリバートすることを確認
         vm.expectRevert("Symbol cannot be empty.");
-        veTokenFactory.createVeToken(tokenAddr, "veTokenName", "");
+        factory.createVeToken(tokenAddr, "veTokenName", "");
     }
 
     function testCreateVeTokenWithExistingTokenAddr() public {
         // 最初のveTokenの作成
         string memory name1 = "veTokenName1";
         string memory symbol1 = "veTKN1";
-        veTokenFactory.createVeToken(tokenAddr, name1, symbol1);
+        factory.createVeToken(tokenAddr, name1, symbol1);
 
         // 同じtokenAddrで再度veTokenを作成しようとする
         string memory name2 = "veTokenName2";
         string memory symbol2 = "veTKN2";
         vm.expectRevert("veToken for this token address already exists.");
-        veTokenFactory.createVeToken(tokenAddr, name2, symbol2);
+        factory.createVeToken(tokenAddr, name2, symbol2);
     }
 
     function testGetDeployedVeTokensWithNonexistentAddress() public view {
         // 存在しないveTokenアドレスを指定した場合の挙動をテスト
-        IVeTokenFactory.VeTokenInfo memory info = veTokenFactory
-            .getDeployedVeTokens(address(1)); // 存在しないアドレスを指定
+        IVeTokenFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
+            address(1)
+        ); // 存在しないアドレスを指定
         assertEq(info.tokenAddr, address(0)); // 存在しない場合、tokenAddrはアドレスゼロであるべき
     }
 
@@ -156,19 +157,16 @@ contract VeTokenFactoryTest is Test {
         vm.assume(bytes(_name).length > 0 && bytes(_symbol).length > 0);
 
         // Fuzzing入力でveTokenを作成
-        address veTokenAddr = veTokenFactory.createVeToken(
-            tokenAddr,
-            _name,
-            _symbol
-        );
+        address veTokenAddr = factory.createVeToken(tokenAddr, _name, _symbol);
         assertTrue(
             veTokenAddr != address(0),
             "veToken creation failed with valid inputs"
         );
 
         // 作成されたveTokenの情報を取得して検証
-        IVeTokenFactory.VeTokenInfo memory info = veTokenFactory
-            .getDeployedVeTokens(tokenAddr);
+        IVeTokenFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
+            tokenAddr
+        );
         assertEq(info.tokenAddr, tokenAddr, "Token address mismatch");
         assertEq(info.name, _name, "Token name mismatch");
         assertEq(info.symbol, _symbol, "Token symbol mismatch");

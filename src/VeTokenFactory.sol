@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./veToken.sol";
 import "./Interfaces/IVeTokenFactory.sol";
+import "./storage/Storage.sol";
+import "./storage/Schema.sol";
 
 /// @title VeTokenFactory
 /// @notice This contract is used to create new veToken contracts.
-contract VeTokenFactory is IVeTokenFactory {
-/// @dev Mapping to record information of deployed veTokens.
-/// Key is the Token address, value is the VeTokenInfo struct.
-mapping(address => VeTokenInfo) internal deployedVeTokens;
+contract VeTokenFactory is UUPSUpgradeable {
+    /// @notice Event triggered when a veToken is created.
+    event VeTokenCreated(
+        address indexed tokenAddr,
+        address indexed veTokenAddr,
+        string name,
+        string symbol
+    );
 
     /// @notice Creates a new veToken contract.
     /// @param _tokenAddr Address of the original token.
@@ -20,7 +28,7 @@ mapping(address => VeTokenInfo) internal deployedVeTokens;
         address _tokenAddr,
         string memory _name,
         string memory _symbol
-    ) external override returns (address) {
+    ) external returns (address) {
         require(
             _tokenAddr != address(0),
             "Token address cannot be the zero address."
@@ -28,18 +36,19 @@ mapping(address => VeTokenInfo) internal deployedVeTokens;
         require(bytes(_name).length > 0, "Name cannot be empty.");
         require(bytes(_symbol).length > 0, "Symbol cannot be empty.");
         require(
-            deployedVeTokens[_tokenAddr].veTokenAddr == address(0),
+            Storage.deployedVeTokens().data[_tokenAddr].veTokenAddr ==
+                address(0),
             "veToken for this token address already exists."
         );
         veToken newVeToken = new veToken(_tokenAddr, _name, _symbol);
-        VeTokenInfo memory newVeTokenInfo = VeTokenInfo({
+        Schema.VeTokenInfo memory newVeTokenInfo = Schema.VeTokenInfo({
             tokenAddr: _tokenAddr,
             name: _name,
             symbol: _symbol,
             veTokenAddr: address(newVeToken)
         });
 
-        deployedVeTokens[_tokenAddr] = newVeTokenInfo;
+        Storage.deployedVeTokens().data[_tokenAddr] = newVeTokenInfo;
 
         // Trigger the event.
         emit VeTokenCreated(_tokenAddr, address(newVeToken), _name, _symbol);
@@ -53,7 +62,7 @@ mapping(address => VeTokenInfo) internal deployedVeTokens;
     /// @return VeTokenInfo structure containing veToken details.
     function getDeployedVeTokens(
         address tokenAddr
-    ) external view override returns (VeTokenInfo memory) {
-        return deployedVeTokens[tokenAddr];
+    ) external view returns (Schema.VeTokenInfo memory) {
+        return Storage.deployedVeTokens().data[tokenAddr];
     }
 }

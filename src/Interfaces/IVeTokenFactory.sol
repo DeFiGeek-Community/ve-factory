@@ -12,14 +12,6 @@ interface IVeTokenFactory {
         address veTokenAddr; // Address of the veToken.
     }
 
-    /// @notice Event triggered when a veToken is created.
-    event VeTokenCreated(
-        address indexed tokenAddr,
-        address indexed veTokenAddr,
-        string name,
-        string symbol
-    );
-
     /// @notice Creates a new veToken contract.
     /// @param _tokenAddr Address of the original token.
     /// @param _name Name of the veToken.
