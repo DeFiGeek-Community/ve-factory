@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./veToken.sol";
-import "./Interfaces/IVeTokenFactory.sol";
 import "./storage/Storage.sol";
 import "./storage/Schema.sol";
 
 /// @title VeTokenFactory
 /// @notice This contract is used to create new veToken contracts.
-contract VeTokenFactory is UUPSUpgradeable {
+contract VeTokenFactory is UUPSUpgradeable, OwnableUpgradeable {
     /// @notice Event triggered when a veToken is created.
     event VeTokenCreated(
         address indexed tokenAddr,
@@ -18,6 +17,14 @@ contract VeTokenFactory is UUPSUpgradeable {
         string name,
         string symbol
     );
+
+    function initialize(address admin) public initializer {
+        __Ownable_init(admin);
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     /// @notice Creates a new veToken contract.
     /// @param _tokenAddr Address of the original token.
