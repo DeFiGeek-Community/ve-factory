@@ -5,17 +5,18 @@ import "forge-std/Test.sol";
 import "../src/Interfaces/IVeTokenFactory.sol";
 import "../src/test/SampleToken.sol";
 import "../src/VeTokenFactory.sol";
+import "../script/DeployScript.s.sol";
 
 // import "../src/veToken.sol";
 
-contract VeTokenFactoryTest is Test {
+contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
     IVeTokenFactory factory;
     SampleToken token;
     address tokenAddr;
 
     function setUp() public {
         // VeTokenFactoryの実装をデプロイし、IVeTokenFactoryインターフェースを介してアクセス
-        factory = IVeTokenFactory(address(new VeTokenFactory()));
+        factory = IVeTokenFactory(address(deploy()));
         token = new SampleToken(1e18);
         tokenAddr = address(token);
     }
