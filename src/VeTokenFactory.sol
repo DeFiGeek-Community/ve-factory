@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (C) 2024 DeFiGeek Community Japan
+ */
+
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./veToken.sol";

@@ -2,7 +2,7 @@ pragma solidity ^0.8.24;
 
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
- * Copyright (C) 2023 Yamato Protocol (DeFiGeek Community Japan)
+ * Copyright (C) 2024 DeFiGeek Community Japan
  */
 
 //solhint-disable max-line-length
