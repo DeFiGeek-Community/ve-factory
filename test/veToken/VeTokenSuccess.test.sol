@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/veToken.sol";
-import "../src/test/SampleToken.sol";
+import "src/veToken.sol";
+import "src/test/SampleToken.sol";
 
 contract VeTokenTest is Test {
     veToken public veTokenContract;

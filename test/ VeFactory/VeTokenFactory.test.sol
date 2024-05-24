@@ -2,12 +2,10 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/Interfaces/IVeTokenFactory.sol";
-import "../src/test/SampleToken.sol";
-import "../src/VeTokenFactory.sol";
-import "../script/DeployScript.s.sol";
-
-// import "../src/veToken.sol";
+import "src/Interfaces/IVeTokenFactory.sol";
+import "src/test/SampleToken.sol";
+import "src/VeTokenFactory.sol";
+import "script/DeployScript.s.sol";
 
 contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
     IVeTokenFactory factory;
