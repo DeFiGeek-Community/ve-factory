@@ -22,10 +22,6 @@ contract Token is ERC20Permit {
     address public tokenMinter;
     address public admin;
 
-    // General constants
-    uint256 constant YEAR = 365 days;
-    uint256 constant INFLATION_DELAY = 1 days;
-
     // Supply parameters
     uint256 public initialRate;
     uint256 public rateReductionTime;
@@ -53,7 +49,7 @@ contract Token is ERC20Permit {
         uint256 rateReductionCoefficient_,
         uint256 inflationDelay_
     ) ERC20Permit(name) ERC20(name, symbol) {
-    require(decimals_ >= 4 && decimals_ <= 18, "decimals must be between 4 and 18"); // この行を修正
+    require(decimals_ >= 4 && decimals_ <= 18, "decimals must be between 4 and 18");
         _decimals = decimals_;
         uint256 _initialSupply = initialSupply_ * (10 ** uint256(decimals_));
         _mint(msg.sender, _initialSupply);
