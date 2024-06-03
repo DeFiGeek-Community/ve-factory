@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.24;
 
-/// @title Interface for veTokenFactory
-/// @notice Defines the basic interface for the veTokenFactory contract.
-interface IVeTokenFactory {
+/// @title Interface for VeFactory
+/// @notice Defines the basic interface for the VeFactory contract.
+interface IVeFactory {
     /// @dev Structure to store metadata of veToken.
     struct VeTokenInfo {
         address tokenAddr; // Address of the original token.
