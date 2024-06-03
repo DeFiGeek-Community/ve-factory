@@ -11,9 +11,9 @@ import "./veToken.sol";
 import "./storage/Storage.sol";
 import "./storage/Schema.sol";
 
-/// @title VeTokenFactory
+/// @title VeFactory
 /// @notice This contract is used to create new veToken contracts.
-contract VeTokenFactory is UUPSUpgradeable, OwnableUpgradeable {
+contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
     /// @notice Event triggered when a veToken is created.
     event VeTokenCreated(
         address indexed tokenAddr,
