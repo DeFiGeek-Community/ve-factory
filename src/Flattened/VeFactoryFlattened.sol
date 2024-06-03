@@ -726,7 +726,7 @@ abstract contract Initializable {
 // src/storage/Schema.sol
 
 library Schema {
-    /// @custom:storage-location erc7201:VeTokenFactory.DeployedVeTokensStorage
+    /// @custom:storage-location erc7201:VeFactory.DeployedVeTokensStorage
     struct $DeployedVeTokensStorage {
         mapping(address => VeTokenInfo) data;
     }
@@ -781,7 +781,7 @@ interface IToken is IERC20 {
 // src/storage/Storage.sol
 
 library Storage {
-    // bytes32 private constant DEPLOYED_VETOKENS_STORAGE_LOCATION = keccak256(abi.encode(uint256(keccak256("VeTokenFactory.VeTokenInfo")) - 1)) & ~bytes32(uint256(0xff));
+    // bytes32 private constant DEPLOYED_VETOKENS_STORAGE_LOCATION = keccak256(abi.encode(uint256(keccak256("VeFactory.VeTokenInfo")) - 1)) & ~bytes32(uint256(0xff));
     bytes32 private constant DEPLOYED_VETOKENS_STORAGE_LOCATION =
         0x034eab1f967b01acc29ed43b575543f84affebe55494d54d0d4700702700f900;
 
@@ -1905,11 +1905,11 @@ abstract contract UUPSUpgradeable is Initializable, IERC1822Proxiable {
     }
 }
 
-// src/VeTokenFactory.sol
+// src/VeFactory.sol
 
-/// @title VeTokenFactory
+/// @title VeFactory
 /// @notice This contract is used to create new veToken contracts.
-contract VeTokenFactory is UUPSUpgradeable, OwnableUpgradeable {
+contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
     /// @notice Event triggered when a veToken is created.
     event VeTokenCreated(
         address indexed tokenAddr,
