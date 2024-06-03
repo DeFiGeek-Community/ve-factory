@@ -2,19 +2,19 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "src/Interfaces/IVeTokenFactory.sol";
+import "src/Interfaces/IVeFactory.sol";
 import "src/test/SampleToken.sol";
-import "src/VeTokenFactory.sol";
+import "src/VeFactory.sol";
 import "script/DeployScript.s.sol";
 
-contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
-    IVeTokenFactory factory;
+contract VeFactoryTest is Test, DeployVeFactory {
+    IVeFactory factory;
     SampleToken token;
     address tokenAddr;
 
     function setUp() public {
-        // VeTokenFactoryの実装をデプロイし、IVeTokenFactoryインターフェースを介してアクセス
-        factory = IVeTokenFactory(address(deploy()));
+        // VeFactoryの実装をデプロイし、IVeFactoryインターフェースを介してアクセス
+        factory = IVeFactory(address(deploy()));
         token = new SampleToken(1e18);
         tokenAddr = address(token);
     }
@@ -52,8 +52,8 @@ contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
         // Decode and assert the name and symbol from the event data if necessary
 
         // Access the mapping correctly
-        // IVeTokenFactory.VeTokenInfo memory info = VeTokenFactory.getDeployedVeTokens(veTokenAddr);
-        IVeTokenFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
+        // IVeFactory.VeTokenInfo memory info = VeFactory.getDeployedVeTokens(veTokenAddr);
+        IVeFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
             tokenAddr
         );
 
@@ -93,13 +93,13 @@ contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
         assertNotEq(veTokenAddr1, veTokenAddr3);
 
         // それぞれのveTokenの情報を確認
-        IVeTokenFactory.VeTokenInfo memory info1 = factory.getDeployedVeTokens(
+        IVeFactory.VeTokenInfo memory info1 = factory.getDeployedVeTokens(
             tokenAddr
         );
-        IVeTokenFactory.VeTokenInfo memory info2 = factory.getDeployedVeTokens(
+        IVeFactory.VeTokenInfo memory info2 = factory.getDeployedVeTokens(
             address(token2)
         );
-        IVeTokenFactory.VeTokenInfo memory info3 = factory.getDeployedVeTokens(
+        IVeFactory.VeTokenInfo memory info3 = factory.getDeployedVeTokens(
             address(token3)
         );
 
@@ -141,7 +141,7 @@ contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
 
     function testGetDeployedVeTokensWithNonexistentAddress() public view {
         // 存在しないveTokenアドレスを指定した場合の挙動をテスト
-        IVeTokenFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
+        IVeFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
             address(1)
         ); // 存在しないアドレスを指定
         assertEq(info.tokenAddr, address(0)); // 存在しない場合、tokenAddrはアドレスゼロであるべき
@@ -163,7 +163,7 @@ contract VeTokenFactoryTest is Test, DeployVeTokenFactory {
         );
 
         // 作成されたveTokenの情報を取得して検証
-        IVeTokenFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
+        IVeFactory.VeTokenInfo memory info = factory.getDeployedVeTokens(
             tokenAddr
         );
         assertEq(info.tokenAddr, tokenAddr, "Token address mismatch");
