@@ -43,9 +43,9 @@ contract TokenEpochTimeSupplyTest is Test {
 
     function testUpdateMiningParameters() public {
         uint256 creationTime = token.startEpochTime();
-        uint256 now = block.timestamp;
-        uint256 newEpoch = creationTime + YEAR - now;
-        vm.warp(block.timestamp + newEpoch);
+        uint256 nowTime = block.timestamp;
+        uint256 newEpoch = creationTime + YEAR - nowTime;
+        vm.warp(nowTime + newEpoch);
 
         token.updateMiningParameters();
         // 更新後のマイニングパラメータを検証
@@ -53,9 +53,9 @@ contract TokenEpochTimeSupplyTest is Test {
 
     function testUpdateMiningParametersSameEpoch() public {
         uint256 creationTime = token.startEpochTime();
-        uint256 now = block.timestamp;
-        uint256 newEpoch = creationTime + YEAR - now;
-        vm.warp(block.timestamp + newEpoch - 3);
+        uint256 nowTime = block.timestamp;
+        uint256 newEpoch = creationTime + YEAR - nowTime;
+        vm.warp(nowTime + newEpoch - 3);
 
         vm.expectRevert(bytes("dev: too soon!"));
         token.updateMiningParameters();
