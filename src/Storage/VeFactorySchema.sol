@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-library Schema {
+library VeFactorySchema {
     /// @custom:storage-location erc7201:VeFactory.DeployedVeTokensStorage
     struct $DeployedVeTokensStorage {
         mapping(address => VeTokenInfo) data;

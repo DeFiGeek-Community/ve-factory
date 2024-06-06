@@ -8,8 +8,8 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./veToken.sol";
-import "./storage/Storage.sol";
-import "./storage/Schema.sol";
+import "./storage/VeFactoryStorage.sol";
+import "./storage/VeFactorySchema.sol";
 
 /// @title VeFactory
 /// @notice This contract is used to create new veToken contracts.
@@ -47,19 +47,19 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
         require(bytes(_name).length > 0, "Name cannot be empty.");
         require(bytes(_symbol).length > 0, "Symbol cannot be empty.");
         require(
-            Storage.deployedVeTokens().data[_tokenAddr].veTokenAddr ==
+            VeFactoryStorage.deployedVeTokens().data[_tokenAddr].veTokenAddr ==
                 address(0),
             "veToken for this token address already exists."
         );
         veToken newVeToken = new veToken(_tokenAddr, _name, _symbol);
-        Schema.VeTokenInfo memory newVeTokenInfo = Schema.VeTokenInfo({
+        VeFactorySchema.VeTokenInfo memory newVeTokenInfo = VeFactorySchema.VeTokenInfo({
             tokenAddr: _tokenAddr,
             name: _name,
             symbol: _symbol,
             veTokenAddr: address(newVeToken)
         });
 
-        Storage.deployedVeTokens().data[_tokenAddr] = newVeTokenInfo;
+        VeFactoryStorage.deployedVeTokens().data[_tokenAddr] = newVeTokenInfo;
 
         // Trigger the event.
         emit VeTokenCreated(_tokenAddr, address(newVeToken), _name, _symbol);
@@ -73,7 +73,7 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
     /// @return VeTokenInfo structure containing veToken details.
     function getDeployedVeTokens(
         address tokenAddr
-    ) external view returns (Schema.VeTokenInfo memory) {
-        return Storage.deployedVeTokens().data[tokenAddr];
+    ) external view returns (VeFactorySchema.VeTokenInfo memory) {
+        return VeFactoryStorage.deployedVeTokens().data[tokenAddr];
     }
 }
