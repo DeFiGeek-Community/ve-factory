@@ -124,7 +124,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                     break;
                 }
                 uint256 _mid = (_min + _max + 2) / 2;
-                FeeDistributorSchema.Point memory _pt = IVeToken(ve_).pointHistory(_mid);
+                FeeDistributorSchema.Point memory _pt = IVeToken(ve_)
+                    .pointHistory(_mid);
                 if (_pt.ts <= timestamp_) {
                     _min = _mid;
                 } else {
@@ -150,10 +151,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                     break;
                 }
                 uint256 _mid = (_min + _max + 2) / 2;
-                FeeDistributorSchema.Point memory _pt = IVeToken(ve_).userPointHistory(
-                    user_,
-                    _mid
-                );
+                FeeDistributorSchema.Point memory _pt = IVeToken(ve_)
+                    .userPointHistory(user_, _mid);
                 if (_pt.ts <= timestamp_) {
                     _min = _mid;
                 } else {
@@ -184,7 +183,10 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             timestamp_,
             _maxUserEpoch
         );
-        FeeDistributorSchema.Point memory _pt = IVeToken(_ve).userPointHistory(user_, _epoch);
+        FeeDistributorSchema.Point memory _pt = IVeToken(_ve).userPointHistory(
+            user_,
+            _epoch
+        );
         int128 _balance = _pt.bias -
             _pt.slope *
             int128(int256(timestamp_ - _pt.ts));
@@ -207,7 +209,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 break;
             } else {
                 uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
+                FeeDistributorSchema.Point memory _pt = IVeToken(_ve)
+                    .pointHistory(_epoch);
                 int128 _dt = 0;
                 if (_t > _pt.ts) {
                     _dt = int128(int256(_t) - int256(_pt.ts));
@@ -239,7 +242,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 break;
             } else {
                 uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
+                FeeDistributorSchema.Point memory _pt = IVeToken(_ve)
+                    .pointHistory(_epoch);
                 uint256 _dt = 0;
                 if (_t > _pt.ts) {
                     _dt = uint256(int256(_t) - int256(_pt.ts));
@@ -297,10 +301,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             _userEpoch = 1;
         }
 
-        FeeDistributorSchema.Point memory _userPoint = IVeToken(ve_).userPointHistory(
-            addr_,
-            _userEpoch
-        );
+        FeeDistributorSchema.Point memory _userPoint = IVeToken(ve_)
+            .userPointHistory(addr_, _userEpoch);
 
         if (_weekCursor == 0) {
             _weekCursor = ((_userPoint.ts + WEEK - 1) / WEEK) * WEEK;
@@ -314,7 +316,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             _weekCursor = _startTime;
         }
 
-        FeeDistributorSchema.Point memory _oldUserPoint = FeeDistributorSchema.Point({bias: 0, slope: 0, ts: 0, blk: 0});
+        FeeDistributorSchema.Point memory _oldUserPoint = FeeDistributorSchema
+            .Point({bias: 0, slope: 0, ts: 0, blk: 0});
 
         // Iterate over weeks
         for (uint256 i; i < 50; ) {
@@ -331,7 +334,12 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                     blk: _userPoint.blk
                 });
                 if (_userEpoch > _maxUserEpoch) {
-                    _userPoint = FeeDistributorSchema.Point({bias: 0, slope: 0, ts: 0, blk: 0});
+                    _userPoint = FeeDistributorSchema.Point({
+                        bias: 0,
+                        slope: 0,
+                        ts: 0,
+                        blk: 0
+                    });
                 } else {
                     _userPoint = IVeToken(ve_).userPointHistory(
                         addr_,
@@ -408,7 +416,10 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _amount = _claim(_addr, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
-            require(IERC20($.token).transfer(_addr, _amount), "Transfer failed");
+            require(
+                IERC20($.token).transfer(_addr, _amount),
+                "Transfer failed"
+            );
             $.tokenLastBalance -= _amount;
         }
 
@@ -448,7 +459,10 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _amount = _claim(addr_, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
-            require(IERC20($.token).transfer(addr_, _amount), "Transfer failed");
+            require(
+                IERC20($.token).transfer(addr_, _amount),
+                "Transfer failed"
+            );
             $.tokenLastBalance -= _amount;
         }
 
@@ -528,7 +542,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         if (_amount > 0) {
             IERC20($.token).transferFrom(msg.sender, address(this), _amount);
             if (
-                $.canCheckpointToken && block.timestamp > $.lastTokenTime + 1 hours
+                $.canCheckpointToken &&
+                block.timestamp > $.lastTokenTime + 1 hours
             ) {
                 _checkpointToken();
             }
