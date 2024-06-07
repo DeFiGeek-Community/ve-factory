@@ -6,7 +6,6 @@ import "src/Storage/FeeDistributorSchema.sol";
 /// @title IVeToken
 /// @notice Interface for veToken contract
 interface IVeToken {
-
     function getLastUserSlope(address addr_) external view returns (int128);
 
     function userPointHistoryTs(
