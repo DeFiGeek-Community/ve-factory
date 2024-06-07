@@ -49,7 +49,13 @@ contract veToken is ReentrancyGuard {
     uint128 private constant INCREASE_LOCK_AMOUNT = 2;
     uint128 private constant INCREASE_UNLOCK_TIME = 3;
 
-    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint128 _type, uint256 ts);
+    event Deposit(
+        address indexed provider,
+        uint256 value,
+        uint256 indexed locktime,
+        uint128 _type,
+        uint256 ts
+    );
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
 
@@ -80,7 +86,11 @@ contract veToken is ReentrancyGuard {
      * @param name_ Token name
      * @param symbol_ Token symbol
      */
-    constructor(address tokenAddr_, string memory name_, string memory symbol_) {
+    constructor(
+        address tokenAddr_,
+        string memory name_,
+        string memory symbol_
+    ) {
         token = tokenAddr_;
         pointHistory[0].blk = block.number;
         pointHistory[0].ts = block.timestamp;
@@ -107,7 +117,10 @@ contract veToken is ReentrancyGuard {
      * @param idx_ User epoch number
      * @return Epoch time of the checkpoint
      */
-    function userPointHistoryTs(address addr_, uint256 idx_) external view returns (uint256) {
+    function userPointHistoryTs(
+        address addr_,
+        uint256 idx_
+    ) external view returns (uint256) {
         return userPointHistory[addr_][idx_].ts;
     }
 
@@ -126,7 +139,11 @@ contract veToken is ReentrancyGuard {
      * @param oldLocked_ Pevious locked amount / end lock time for the user
      * @param newLocked_ New locked amount / end lock time for the user
      */
-    function _checkpoint(address addr_, LockedBalance memory oldLocked_, LockedBalance memory newLocked_) internal {
+    function _checkpoint(
+        address addr_,
+        LockedBalance memory oldLocked_,
+        LockedBalance memory newLocked_
+    ) internal {
         Point memory _uOld;
         Point memory _uNew;
         int128 _oldDSlope = 0;
@@ -140,14 +157,20 @@ contract veToken is ReentrancyGuard {
                 unchecked {
                     _uOld.slope = int128(oldLocked_.amount / int256(MAXTIME));
                 }
-                _uOld.bias = _uOld.slope * int128(uint128(oldLocked_.end - block.timestamp));
+                _uOld.bias =
+                    _uOld.slope *
+                    int128(uint128(oldLocked_.end - block.timestamp));
             }
 
             if (newLocked_.end > block.timestamp && newLocked_.amount > 0) {
                 unchecked {
-                    _uNew.slope = int128(uint128(newLocked_.amount) / uint128(MAXTIME));
+                    _uNew.slope = int128(
+                        uint128(newLocked_.amount) / uint128(MAXTIME)
+                    );
                 }
-                _uNew.bias = _uNew.slope * int128(uint128(newLocked_.end - block.timestamp));
+                _uNew.bias =
+                    _uNew.slope *
+                    int128(uint128(newLocked_.end - block.timestamp));
             }
 
             // Read values of scheduled changes in the slope
@@ -163,7 +186,12 @@ contract veToken is ReentrancyGuard {
             }
         }
 
-        Point memory _lastPoint = Point({bias: 0, slope: 0, ts: block.timestamp, blk: block.number});
+        Point memory _lastPoint = Point({
+            bias: 0,
+            slope: 0,
+            ts: block.timestamp,
+            blk: block.number
+        });
         if (_epoch > 0) {
             _lastPoint = Point({
                 bias: pointHistory[_epoch].bias,
@@ -177,11 +205,17 @@ contract veToken is ReentrancyGuard {
         // initial_last_point is used for extrapolation to calculate block number
         // (approximately, for *At methods) and save them
         // as we cannot figure that out exactly from inside the contract
-        Point memory _initialLastPoint =
-            Point({bias: _lastPoint.bias, slope: _lastPoint.slope, ts: _lastPoint.ts, blk: _lastPoint.blk});
+        Point memory _initialLastPoint = Point({
+            bias: _lastPoint.bias,
+            slope: _lastPoint.slope,
+            ts: _lastPoint.ts,
+            blk: _lastPoint.blk
+        });
         uint256 _blockSlope = 0;
         if (block.timestamp > _lastPoint.ts) {
-            _blockSlope = (MULTIPLIER * (block.number - _lastPoint.blk)) / (block.timestamp - _lastPoint.ts);
+            _blockSlope =
+                (MULTIPLIER * (block.number - _lastPoint.blk)) /
+                (block.timestamp - _lastPoint.ts);
         }
         // If last point is already recorded in this block, slope=0
         // But that's ok b/c we know the block in such case
@@ -191,7 +225,7 @@ contract veToken is ReentrancyGuard {
         unchecked {
             _ti = (_lastCheckpoint / WEEK) * WEEK;
         }
-        for (uint256 i; i < 255;) {
+        for (uint256 i; i < 255; ) {
             // Hopefully it won't happen that this won't get used in 5 years!
             // If it does, users will be able to withdraw but vote weight will be broken
             _ti += WEEK;
@@ -202,7 +236,9 @@ contract veToken is ReentrancyGuard {
                 _dSlope = slopeChanges[_ti];
             }
 
-            _lastPoint.bias -= _lastPoint.slope * int128(uint128(_ti) - uint128(_lastCheckpoint));
+            _lastPoint.bias -=
+                _lastPoint.slope *
+                int128(uint128(_ti) - uint128(_lastCheckpoint));
             _lastPoint.slope += _dSlope;
 
             if (_lastPoint.bias < 0) {
@@ -216,7 +252,10 @@ contract veToken is ReentrancyGuard {
 
             _lastCheckpoint = _ti;
             _lastPoint.ts = _ti;
-            _lastPoint.blk = _initialLastPoint.blk + (_blockSlope * (_ti - _initialLastPoint.ts)) / MULTIPLIER;
+            _lastPoint.blk =
+                _initialLastPoint.blk +
+                (_blockSlope * (_ti - _initialLastPoint.ts)) /
+                MULTIPLIER;
 
             _epoch += 1;
 
@@ -224,8 +263,12 @@ contract veToken is ReentrancyGuard {
                 _lastPoint.blk = block.number;
                 break;
             } else {
-                pointHistory[_epoch] =
-                    Point({bias: _lastPoint.bias, slope: _lastPoint.slope, ts: _lastPoint.ts, blk: _lastPoint.blk});
+                pointHistory[_epoch] = Point({
+                    bias: _lastPoint.bias,
+                    slope: _lastPoint.slope,
+                    ts: _lastPoint.ts,
+                    blk: _lastPoint.blk
+                });
             }
             unchecked {
                 ++i;
@@ -301,8 +344,14 @@ contract veToken is ReentrancyGuard {
         LockedBalance memory lockedBalance_,
         uint128 type_
     ) internal {
-        LockedBalance memory _locked = LockedBalance(lockedBalance_.amount, lockedBalance_.end);
-        LockedBalance memory _oldLocked = LockedBalance(lockedBalance_.amount, lockedBalance_.end);
+        LockedBalance memory _locked = LockedBalance(
+            lockedBalance_.amount,
+            lockedBalance_.end
+        );
+        LockedBalance memory _oldLocked = LockedBalance(
+            lockedBalance_.amount,
+            lockedBalance_.end
+        );
 
         uint256 _supplyBefore = supply;
         supply = _supplyBefore + value_;
@@ -321,7 +370,10 @@ contract veToken is ReentrancyGuard {
         _checkpoint(addr_, _oldLocked, _locked);
 
         if (value_ != 0) {
-            require(IToken(token).transferFrom(addr_, address(this), value_), "Transfer failed");
+            require(
+                IToken(token).transferFrom(addr_, address(this), value_),
+                "Transfer failed"
+            );
         }
 
         emit Deposit(addr_, value_, _locked.end, type_, block.timestamp);
@@ -349,7 +401,10 @@ contract veToken is ReentrancyGuard {
 
         require(value_ > 0, "Need non-zero value");
         require(_locked.amount > 0, "No existing lock found");
-        require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
+        require(
+            _locked.end > block.timestamp,
+            "Cannot add to expired lock. Withdraw"
+        );
 
         _depositFor(addr_, value_, 0, locked[addr_], DEPOSIT_FOR_TYPE);
     }
@@ -359,16 +414,31 @@ contract veToken is ReentrancyGuard {
      * @param value_ Amount to deposit
      * @param unlockTime_ Epoch time when tokens unlock, rounded down to whole weeks
      */
-    function createLock(uint256 value_, uint256 unlockTime_) external nonReentrant {
+    function createLock(
+        uint256 value_,
+        uint256 unlockTime_
+    ) external nonReentrant {
         uint256 _unlockTimeRounded = (unlockTime_ / WEEK) * WEEK;
         LockedBalance memory _locked = locked[msg.sender];
 
         require(value_ > 0, "Need non-zero value");
         require(_locked.amount == 0, "Withdraw old tokens first");
-        require(_unlockTimeRounded > block.timestamp, "Can only lock until time in the future");
-        require(_unlockTimeRounded <= block.timestamp + MAXTIME, "Voting lock can be 4 years max");
+        require(
+            _unlockTimeRounded > block.timestamp,
+            "Can only lock until time in the future"
+        );
+        require(
+            _unlockTimeRounded <= block.timestamp + MAXTIME,
+            "Voting lock can be 4 years max"
+        );
 
-        _depositFor(msg.sender, value_, _unlockTimeRounded, _locked, CREATE_LOCK_TYPE);
+        _depositFor(
+            msg.sender,
+            value_,
+            _unlockTimeRounded,
+            _locked,
+            CREATE_LOCK_TYPE
+        );
     }
 
     /**
@@ -381,7 +451,10 @@ contract veToken is ReentrancyGuard {
 
         require(value_ > 0, "Need non-zero value");
         require(_locked.amount > 0, "No existing lock found");
-        require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
+        require(
+            _locked.end > block.timestamp,
+            "Cannot add to expired lock. Withdraw"
+        );
 
         _depositFor(msg.sender, value_, 0, _locked, INCREASE_LOCK_AMOUNT);
     }
@@ -399,10 +472,22 @@ contract veToken is ReentrancyGuard {
 
         require(_locked.end > block.timestamp, "Lock expired");
         require(_locked.amount > 0, "Nothing is locked");
-        require(_unlockTimeRounded > _locked.end, "Can only increase lock duration");
-        require(_unlockTimeRounded <= block.timestamp + MAXTIME, "Voting lock can be 4 years max");
+        require(
+            _unlockTimeRounded > _locked.end,
+            "Can only increase lock duration"
+        );
+        require(
+            _unlockTimeRounded <= block.timestamp + MAXTIME,
+            "Voting lock can be 4 years max"
+        );
 
-        _depositFor(msg.sender, 0, _unlockTimeRounded, _locked, INCREASE_UNLOCK_TIME);
+        _depositFor(
+            msg.sender,
+            0,
+            _unlockTimeRounded,
+            _locked,
+            INCREASE_UNLOCK_TIME
+        );
     }
 
     /**
@@ -410,11 +495,17 @@ contract veToken is ReentrancyGuard {
      * @dev Only possible if the lock has expired
      */
     function withdraw() external nonReentrant {
-        LockedBalance memory _locked = LockedBalance(locked[msg.sender].amount, locked[msg.sender].end);
+        LockedBalance memory _locked = LockedBalance(
+            locked[msg.sender].amount,
+            locked[msg.sender].end
+        );
         require(block.timestamp >= _locked.end, "The lock didn't expire");
         uint256 _value = uint256(int256(_locked.amount));
 
-        LockedBalance memory _oldLocked = LockedBalance(locked[msg.sender].amount, locked[msg.sender].end);
+        LockedBalance memory _oldLocked = LockedBalance(
+            locked[msg.sender].amount,
+            locked[msg.sender].end
+        );
 
         _locked.end = 0;
         _locked.amount = 0;
@@ -443,7 +534,10 @@ contract veToken is ReentrancyGuard {
      * @param maxEpoch_ Don't go beyond this epoch
      * @return Approximate epoch for block
      */
-    function findBlockEpoch(uint256 block_, uint256 maxEpoch_) internal view returns (uint256) {
+    function findBlockEpoch(
+        uint256 block_,
+        uint256 maxEpoch_
+    ) internal view returns (uint256) {
         // Binary search
         uint256 _min = 0;
         uint256 _max = maxEpoch_;
@@ -471,13 +565,18 @@ contract veToken is ReentrancyGuard {
      * @param t_ Epoch time to return voting power at
      * @return User voting power
      */
-    function balanceOf(address addr_, uint256 t_) external view returns (uint256) {
+    function balanceOf(
+        address addr_,
+        uint256 t_
+    ) external view returns (uint256) {
         uint256 epoch_ = userPointEpoch[addr_];
         if (epoch_ == 0) {
             return 0;
         } else {
             Point memory lastPoint = userPointHistory[addr_][epoch_];
-            lastPoint.bias -= lastPoint.slope * int128(int256(t_) - int256(lastPoint.ts));
+            lastPoint.bias -=
+                lastPoint.slope *
+                int128(int256(t_) - int256(lastPoint.ts));
             if (lastPoint.bias < 0) {
                 lastPoint.bias = 0;
             }
@@ -497,7 +596,9 @@ contract veToken is ReentrancyGuard {
             return 0;
         } else {
             Point memory lastPoint = userPointHistory[addr_][epoch_];
-            lastPoint.bias -= lastPoint.slope * int128(int256(block.timestamp) - int256(lastPoint.ts));
+            lastPoint.bias -=
+                lastPoint.slope *
+                int128(int256(block.timestamp) - int256(lastPoint.ts));
             if (lastPoint.bias < 0) {
                 lastPoint.bias = 0;
             }
@@ -512,7 +613,10 @@ contract veToken is ReentrancyGuard {
      * @param block_ Block to calculate the voting power at
      * @return Voting power
      */
-    function balanceOfAt(address addr_, uint256 block_) external view returns (uint256) {
+    function balanceOfAt(
+        address addr_,
+        uint256 block_
+    ) external view returns (uint256) {
         // Copying and pasting totalSupply code because Vyper cannot pass by
         // reference yet
         require(block_ <= block.number, "Cannot look up future block");
@@ -557,7 +661,9 @@ contract veToken is ReentrancyGuard {
             _blockTime += (_dt * (block_ - _point0.blk)) / _dBlock;
         }
 
-        _upoint.bias -= _upoint.slope * int128(int256(_blockTime) - int256(_upoint.ts));
+        _upoint.bias -=
+            _upoint.slope *
+            int128(int256(_blockTime) - int256(_upoint.ts));
         if (_upoint.bias >= 0) {
             return uint256(int256(_upoint.bias));
         } else {
@@ -571,13 +677,16 @@ contract veToken is ReentrancyGuard {
      * @param t_ Time to calculate the total voting power at
      * @return Total voting power at that time
      */
-    function supplyAt(Point memory point_, uint256 t_) internal view returns (uint256) {
+    function supplyAt(
+        Point memory point_,
+        uint256 t_
+    ) internal view returns (uint256) {
         Point memory _lastPoint = point_;
         uint256 _ti;
         unchecked {
             _ti = (_lastPoint.ts / WEEK) * WEEK;
         }
-        for (uint256 i; i < 255;) {
+        for (uint256 i; i < 255; ) {
             _ti += WEEK;
             int128 _dSlope = 0;
             if (_ti > t_) {
@@ -585,7 +694,9 @@ contract veToken is ReentrancyGuard {
             } else {
                 _dSlope = slopeChanges[_ti];
             }
-            _lastPoint.bias -= _lastPoint.slope * int128(int256(_ti) - int256(_lastPoint.ts));
+            _lastPoint.bias -=
+                _lastPoint.slope *
+                int128(int256(_ti) - int256(_lastPoint.ts));
             if (_ti == t_) {
                 break;
             }
@@ -644,11 +755,15 @@ contract veToken is ReentrancyGuard {
         if (_targetEpoch < _epoch) {
             Point memory _pointNext = pointHistory[_targetEpoch + 1];
             if (_point.blk != _pointNext.blk) {
-                _dt = ((block_ - _point.blk) * (_pointNext.ts - _point.ts)) / (_pointNext.blk - _point.blk);
+                _dt =
+                    ((block_ - _point.blk) * (_pointNext.ts - _point.ts)) /
+                    (_pointNext.blk - _point.blk);
             }
         } else {
             if (_point.blk != block.number) {
-                _dt = ((block_ - _point.blk) * (block.timestamp - _point.ts)) / (block.number - _point.blk);
+                _dt =
+                    ((block_ - _point.blk) * (block.timestamp - _point.ts)) /
+                    (block.number - _point.blk);
             }
         }
         // Now _dt contains info on how far are we beyond point
