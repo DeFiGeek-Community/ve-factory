@@ -48,17 +48,17 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
         require(bytes(_name).length > 0, "Name cannot be empty.");
         require(bytes(_symbol).length > 0, "Symbol cannot be empty.");
         require(
-             $.deployedVeTokens[_tokenAddr].veTokenAddr ==
-                address(0),
+            $.deployedVeTokens[_tokenAddr].veTokenAddr == address(0),
             "veToken for this token address already exists."
         );
         veToken newVeToken = new veToken(_tokenAddr, _name, _symbol);
-        VeFactorySchema.VeTokenInfo memory newVeTokenInfo = VeFactorySchema.VeTokenInfo({
-            tokenAddr: _tokenAddr,
-            name: _name,
-            symbol: _symbol,
-            veTokenAddr: address(newVeToken)
-        });
+        VeFactorySchema.VeTokenInfo memory newVeTokenInfo = VeFactorySchema
+            .VeTokenInfo({
+                tokenAddr: _tokenAddr,
+                name: _name,
+                symbol: _symbol,
+                veTokenAddr: address(newVeToken)
+            });
 
         $.deployedVeTokens[_tokenAddr] = newVeTokenInfo;
 
