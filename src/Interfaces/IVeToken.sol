@@ -1,15 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.24;
 
+import "src/Storage/FeeDistributorSchema.sol";
+
 /// @title IVeToken
 /// @notice Interface for veToken contract
 interface IVeToken {
+
     function getLastUserSlope(address addr_) external view returns (int128);
 
     function userPointHistoryTs(
         address addr_,
         uint256 idx_
     ) external view returns (uint256);
+
+    function userPointEpoch(address addr) external view returns (uint256);
+
+    function epoch() external view returns (uint256);
+
+    function userPointHistory(
+        address addr,
+        uint256 loc
+    ) external view returns (FeeDistributorSchema.Point memory);
+
+    function pointHistory(
+        uint256 loc
+    ) external view returns (FeeDistributorSchema.Point memory);
 
     function lockedEnd(address addr_) external view returns (uint256);
 
