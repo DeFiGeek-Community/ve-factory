@@ -9,7 +9,7 @@ library Storage {
     bytes32 private constant FEE_DISTRIBUTOR_STORAGE_LOCATION =
         0x965167c5566e6400ca5c0b84cde19d419bf7efdf30963b12dce3259d1e4b8d11;
 
-    function feeDistributor()
+    function FeeDistributor()
         internal
         pure
         returns (FeeDistributorSchema.Storage storage s)
