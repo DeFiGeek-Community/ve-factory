@@ -49,7 +49,10 @@ contract Token is ERC20Permit {
         uint256 rateReductionCoefficient_,
         uint256 inflationDelay_
     ) ERC20Permit(name) ERC20(name, symbol) {
-    require(decimals_ >= 4 && decimals_ <= 18, "decimals must be between 4 and 18");
+        require(
+            decimals_ >= 4 && decimals_ <= 18,
+            "decimals must be between 4 and 18"
+        );
         _decimals = decimals_;
         uint256 _initialSupply = initialSupply_ * (10 ** uint256(decimals_));
         _mint(msg.sender, _initialSupply);
@@ -59,8 +62,7 @@ contract Token is ERC20Permit {
             (initialRate_ * (10 ** uint256(decimals_))) /
             rateReductionTime_;
         rateReductionTime = rateReductionTime_;
-        rateReductionCoefficient =
-            ((100 * (10 ** uint256(decimals_))) /
+        rateReductionCoefficient = ((100 * (10 ** uint256(decimals_))) /
             (100 - rateReductionCoefficient_));
         rateDenominator = 10 ** uint256(decimals_);
         inflationDelay = inflationDelay_;
