@@ -40,6 +40,7 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
         string memory _name,
         string memory _symbol
     ) external returns (address) {
+        VeFactorySchema.VeFactoryStorage storage $ = VeFactoryStorage.Factory();
         require(
             _tokenAddr != address(0),
             "Token address cannot be the zero address."
@@ -47,7 +48,7 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
         require(bytes(_name).length > 0, "Name cannot be empty.");
         require(bytes(_symbol).length > 0, "Symbol cannot be empty.");
         require(
-            VeFactoryStorage.deployedVeTokens().data[_tokenAddr].veTokenAddr ==
+             $.deployedVeTokens[_tokenAddr].veTokenAddr ==
                 address(0),
             "veToken for this token address already exists."
         );
@@ -59,7 +60,7 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
             veTokenAddr: address(newVeToken)
         });
 
-        VeFactoryStorage.deployedVeTokens().data[_tokenAddr] = newVeTokenInfo;
+        $.deployedVeTokens[_tokenAddr] = newVeTokenInfo;
 
         // Trigger the event.
         emit VeTokenCreated(_tokenAddr, address(newVeToken), _name, _symbol);
@@ -74,6 +75,7 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
     function getDeployedVeTokens(
         address tokenAddr
     ) external view returns (VeFactorySchema.VeTokenInfo memory) {
-        return VeFactoryStorage.deployedVeTokens().data[tokenAddr];
+        VeFactorySchema.VeFactoryStorage storage $ = VeFactoryStorage.Factory();
+        return $.deployedVeTokens[tokenAddr];
     }
 }
