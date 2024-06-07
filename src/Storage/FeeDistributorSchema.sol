@@ -12,14 +12,12 @@ library FeeDistributorSchema {
         uint256 tokenLastBalance;
         bool canCheckpointToken;
         bool isKilled;
-
         // アドレス関連
         address votingEscrow;
         address token;
         address admin;
         address futureAdmin;
         address emergencyReturn;
-
         // ユーザーと週ごとのデータ
         mapping(address => uint256) timeCursorOf;
         mapping(address => uint256) userEpochOf;
