@@ -40,7 +40,6 @@ contract TokenDistribution {
     uint256 public startTime;
     uint256 public totalMintAmount;
 
-
     constructor(
         address token_,
         uint256 initialRate_,
@@ -53,12 +52,9 @@ contract TokenDistribution {
         uint256 _decimals = uint256(IERC20Metadata(token_).decimals());
         admin = msg.sender;
 
-        initialRate =
-            (initialRate_ * (10 ** _decimals)) /
-            rateReductionTime_;
+        initialRate = (initialRate_ * (10 ** _decimals)) / rateReductionTime_;
         rateReductionTime = rateReductionTime_;
-        rateReductionCoefficient =
-            ((100 * (10 ** _decimals)) /
+        rateReductionCoefficient = ((100 * (10 ** _decimals)) /
             (100 - rateReductionCoefficient_));
         rateDenominator = 10 ** _decimals;
         inflationDelay = inflationDelay_;
@@ -69,7 +65,11 @@ contract TokenDistribution {
         rate = 0;
         startEpochSupply = 0;
         totalMintAmount = totalMintAmount_;
-        IERC20(tokenAddr).transferFrom(msg.sender ,address(this), totalMintAmount_);
+        IERC20(tokenAddr).transferFrom(
+            msg.sender,
+            address(this),
+            totalMintAmount_
+        );
     }
 
     /**
@@ -249,11 +249,12 @@ contract TokenDistribution {
             _updateMiningParameters();
         }
         require(
-            IERC20(tokenAddr).balanceOf(address(this)) + _value <= _availableSupply(),
+            IERC20(tokenAddr).balanceOf(address(this)) + _value <=
+                _availableSupply(),
             "dev: exceeds allowable mint amount"
         );
 
-        IERC20(tokenAddr).transferFrom(address(this) ,_to, _value);
+        IERC20(tokenAddr).transferFrom(address(this), _to, _value);
 
         return true;
     }
