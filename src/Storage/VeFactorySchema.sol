@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 library VeFactorySchema {
     /// @custom:storage-location erc7201:VeFactory.DeployedVeTokensStorage
-    struct $DeployedVeTokensStorage {
-        mapping(address => VeTokenInfo) data;
+    struct VeFactoryStorage {
+        mapping(address => VeTokenInfo) deployedVeTokens;
     }
 
     struct VeTokenInfo {
