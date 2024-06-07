@@ -3,12 +3,13 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./Interfaces/IVeToken.sol";
 import "src/Storage/FeeDistributorSchema.sol";
 import "src/Storage/Storage.sol";
 
-contract FeeDistributor is ReentrancyGuardUpgradeable {
+contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     uint256 public constant WEEK = 7 * 86400;
 
     event CommitAdmin(address indexed admin);
@@ -22,10 +23,6 @@ contract FeeDistributor is ReentrancyGuardUpgradeable {
         uint256 maxEpoch
     );
 
-    function initialize() public initializer {
-        __ReentrancyGuard_init();
-    }
-
     /***
      * @notice Contract constructor
      * @param votingEscrow_ VotingEscrow contract address
@@ -34,13 +31,15 @@ contract FeeDistributor is ReentrancyGuardUpgradeable {
      * @param admin_ Admin address
      * @param emergencyReturn_ Address to transfer `_token` balance to if this contract is killed
      */
-    constructor(
+    function initialize(
         address votingEscrow_,
         uint256 startTime_,
         address token_,
         address admin_,
         address emergencyReturn_
-    ) {
+    ) public initializer {
+        __ReentrancyGuard_init();
+
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         uint256 t = (startTime_ / WEEK) * WEEK;
         $.startTime = t;
