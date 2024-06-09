@@ -9,7 +9,7 @@ pragma solidity ^0.8.24;
 //solhint-disable no-inline-assembly
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./Interfaces/IToken.sol";
+import "src/Interfaces/IToken.sol";
 
 /**
  * @title veToken Token

@@ -7,9 +7,9 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./veToken.sol";
-import "./storage/VeFactoryStorage.sol";
-import "./storage/VeFactorySchema.sol";
+import "src/veToken.sol";
+import "src/storage/VeFactoryStorage.sol";
+import "src/storage/VeFactorySchema.sol";
 
 /// @title VeFactory
 /// @notice This contract is used to create new veToken contracts.

@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./Interfaces/IVeToken.sol";
+import "src/Interfaces/IVeToken.sol";
 import "src/Storage/FeeDistributorSchema.sol";
 import "src/Storage/Storage.sol";
 
