@@ -31,13 +31,32 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param admin_ Admin address
      * @param emergencyReturn_ Address to transfer `_token` balance to if this contract is killed
      */
-    function initialize(
+    // function initialize(
+    //     address votingEscrow_,
+    //     uint256 startTime_,
+    //     address token_,
+    //     address admin_,
+    //     address emergencyReturn_
+    // ) public initializer {
+    //     __ReentrancyGuard_init();
+
+    //     FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+    //     uint256 t = (startTime_ / WEEK) * WEEK;
+    //     $.startTime = t;
+    //     $.lastTokenTime = t;
+    //     $.timeCursor = t;
+    //     $.token = token_;
+    //     $.votingEscrow = votingEscrow_;
+    //     $.admin = admin_;
+    //     $.emergencyReturn = emergencyReturn_;
+    // }
+    constructor(
         address votingEscrow_,
         uint256 startTime_,
         address token_,
         address admin_,
         address emergencyReturn_
-    ) public initializer {
+    ) {
         __ReentrancyGuard_init();
 
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
@@ -626,4 +645,90 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         require($.admin == msg.sender, "Access denied");
         _;
     }
+
+
+   /**
+     * @notice ストレージ変数の値を取得するための関数
+     */
+    function startTime() public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.startTime;
+    }
+
+    function timeCursor() public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.timeCursor;
+    }
+
+    function lastTokenTime() public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.lastTokenTime;
+    }
+
+    function totalReceived() public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.totalReceived;
+    }
+
+    function tokenLastBalance() public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.tokenLastBalance;
+    }
+
+    function canCheckpointToken() public view returns (bool) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.canCheckpointToken;
+    }
+
+    function isKilled() public view returns (bool) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.isKilled;
+    }
+
+    function votingEscrow() public view returns (address) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.votingEscrow;
+    }
+
+    function token() public view returns (address) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.token;
+    }
+
+    function admin() public view returns (address) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.admin;
+    }
+
+    function futureAdmin() public view returns (address) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.futureAdmin;
+    }
+
+    function emergencyReturn() public view returns (address) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.emergencyReturn;
+    }
+
+    function timeCursorOf(address user) public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.timeCursorOf[user];
+    }
+
+    function userEpochOf(address user) public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.userEpochOf[user];
+    }
+
+    function tokensPerWeek(uint256 week) public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.tokensPerWeek[week];
+    }
+
+    function veSupply(uint256 week) public view returns (uint256) {
+        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
+        return ds.veSupply[week];
+    }
+
+
 }
