@@ -7,7 +7,7 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "src/veToken.sol";
+import "src/VeToken.sol";
 import "src/storage/VeFactoryStorage.sol";
 import "src/storage/VeFactorySchema.sol";
 
@@ -51,7 +51,7 @@ contract VeFactory is UUPSUpgradeable, OwnableUpgradeable {
             $.deployedVeTokens[_tokenAddr].veTokenAddr == address(0),
             "veToken for this token address already exists."
         );
-        veToken newVeToken = new veToken(_tokenAddr, _name, _symbol);
+        VeToken newVeToken = new VeToken(_tokenAddr, _name, _symbol);
         VeFactorySchema.VeTokenInfo memory newVeTokenInfo = VeFactorySchema
             .VeTokenInfo({
                 tokenAddr: _tokenAddr,
