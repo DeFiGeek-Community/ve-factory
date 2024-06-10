@@ -2,16 +2,16 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "src/veToken.sol";
+import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
 contract VeTokenError is Test {
-    veToken public veTokenContract;
+    VeToken public veTokenContract;
     SampleToken public token;
 
     function setUp() public {
         token = new SampleToken(1e20); // トークンの初期供給量を設定
-        veTokenContract = new veToken(address(token), "veToken", "veTKN");
+        veTokenContract = new VeToken(address(token), "veToken", "veTKN");
         token.transfer(address(this), 1e20);
         token.approve(address(veTokenContract), 1e20);
     }
