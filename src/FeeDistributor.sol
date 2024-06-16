@@ -31,32 +31,13 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param admin_ Admin address
      * @param emergencyReturn_ Address to transfer `_token` balance to if this contract is killed
      */
-    // function initialize(
-    //     address votingEscrow_,
-    //     uint256 startTime_,
-    //     address token_,
-    //     address admin_,
-    //     address emergencyReturn_
-    // ) public initializer {
-    //     __ReentrancyGuard_init();
-
-    //     FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
-    //     uint256 t = (startTime_ / WEEK) * WEEK;
-    //     $.startTime = t;
-    //     $.lastTokenTime = t;
-    //     $.timeCursor = t;
-    //     $.token = token_;
-    //     $.votingEscrow = votingEscrow_;
-    //     $.admin = admin_;
-    //     $.emergencyReturn = emergencyReturn_;
-    // }
-    constructor(
+    function initialize(
         address votingEscrow_,
         uint256 startTime_,
         address token_,
         address admin_,
         address emergencyReturn_
-    ) {
+    ) public initializer {
         __ReentrancyGuard_init();
 
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
