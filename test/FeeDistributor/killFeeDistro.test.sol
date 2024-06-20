@@ -2,15 +2,18 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {MCTest} from "@mc/devkit/Flattened.sol";
 import "src/FeeDistributor.sol";
+import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorKillFeeDistroTest is Test {
+contract FeeDistributorKillFeeDistroTest is MCTest {
     address alice;
     address bob;
     address charlie;
+
+    IFeeDistributor public feeDistributor = IFeeDistributor(target);
 
     FeeDistributor distributor;
     VeToken veToken;
@@ -22,69 +25,97 @@ contract FeeDistributorKillFeeDistroTest is Test {
         bob = address(0x2);
         charlie = address(0x3);
 
-        token = new SampleToken(1e22);
-        coinA = new SampleToken(1e22);
+        token = new SampleToken(1e26);
+        coinA = new SampleToken(1e26);
+        coinA.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        uint256 currentTime = block.timestamp;
-        distributor = new FeeDistributor(
+        distributor = new FeeDistributor();
+
+        _use(FeeDistributor.initialize.selector, address(distributor));
+        _use(FeeDistributor.isKilled.selector, address(distributor));
+        _use(FeeDistributor.killMe.selector, address(distributor));
+        _use(bytes4(keccak256("claim()")), address(distributor));
+        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claimMany.selector, address(distributor));
+        _use(FeeDistributor.emergencyReturn.selector, address(distributor));
+
+        feeDistributor.initialize(
             address(veToken),
-            currentTime,
+            block.timestamp,
             address(coinA),
             alice,
             bob
         );
     }
 
-    function testKillFeeDistro() public {
-        // 初期状態の確認
-        assertFalse(distributor.isKilled());
-        assertEq(distributor.emergencyReturn(), bob);
+    function testAssumptions() public view {
+        assertFalse(feeDistributor.isKilled());
+        assertEq(feeDistributor.emergencyReturn(), bob);
+    }
 
-        // kill関数のテスト
+    function testKill() public {
         vm.prank(alice);
-        distributor.killMe();
-        assertTrue(distributor.isKilled());
+        feeDistributor.killMe();
+        assertTrue(feeDistributor.isKilled());
+    }
 
-        // kill関数を複数回呼び出しても状態が変わらないことを確認
+    function testMultiKill() public {
         vm.prank(alice);
-        distributor.killMe();
-        assertTrue(distributor.isKilled());
+        feeDistributor.killMe();
+        vm.prank(alice);
+        feeDistributor.killMe(); // Should not change the state
+        assertTrue(feeDistributor.isKilled());
+    }
 
-        // トークン転送のテスト
-        coinA.transfer(address(distributor), 31337);
-        vm.prank(alice);
-        distributor.killMe();
+    function testKillingTransfersTokens() public {
+        vm.startPrank(alice);
+        coinA.transfer(target, 31337);
+        feeDistributor.killMe();
         assertEq(coinA.balanceOf(bob), 31337);
+    }
 
-        // 複数回killを呼び出した後のトークン転送テスト
-        coinA.transfer(address(distributor), 10000);
-        vm.prank(alice);
-        distributor.killMe();
-        coinA.transfer(address(distributor), 30000);
-        vm.prank(alice);
-        distributor.killMe();
+    function testMultiKillTokenTransfer() public {
+        vm.startPrank(alice);
+        coinA.transfer(target, 10000);
+        feeDistributor.killMe();
+        coinA.transfer(target, 30000);
+        feeDistributor.killMe();
         assertEq(coinA.balanceOf(bob), 40000);
+    }
 
-        // 管理者以外がkillを呼び出せないことを確認
+    function testOnlyAdminCanKill() public {
         vm.expectRevert();
         vm.prank(charlie);
-        distributor.killMe();
-
-        // kill後にclaimが呼び出せないことを確認
-        vm.prank(alice);
-        distributor.killMe();
-        vm.expectRevert();
-        vm.prank(bob);
-        distributor.claim();
-
-        // kill後にclaim(address)が呼び出せないことを確認
-        vm.expectRevert();
-        vm.prank(bob);
-        distributor.claim(alice);
-
-        // kill後にclaimManyが呼び出せないことを確認
-        vm.expectRevert();
-        vm.prank(bob);
-        distributor.claimMany(new address[](20));
+        feeDistributor.killMe();
     }
+
+    function testCannotClaimAfterKilled() public {
+        vm.prank(alice);
+        feeDistributor.killMe();
+        vm.expectRevert();
+        vm.prank(bob);
+        feeDistributor.claim();
+    }
+
+    function testCannotClaimForAfterKilled() public {
+        vm.prank(alice);
+        feeDistributor.killMe();
+        vm.expectRevert();
+        vm.prank(bob);
+        feeDistributor.claim(alice);
+    }
+
+    function testCannotClaimManyAfterKilled() public {
+        address[] memory claimants = new address[](20);
+        for (uint i = 0; i < 20; i++) {
+            claimants[i] = alice;
+        }
+        vm.prank(alice);
+        feeDistributor.killMe();
+        vm.expectRevert();
+        vm.prank(bob);
+        feeDistributor.claimMany(claimants);
+    }
+
+    receive() external payable {}
 }
