@@ -32,6 +32,8 @@ contract FeeDistributorInitializeTest is MCTest {
         _use(FeeDistributor.initialize.selector, address(distributor));
         _use(FeeDistributor.votingEscrow.selector, address(distributor));
         _use(FeeDistributor.startTime.selector, address(distributor));
+        _use(FeeDistributor.lastTokenTime.selector, address(distributor));
+        _use(FeeDistributor.timeCursor.selector, address(distributor));
         _use(FeeDistributor.token.selector, address(distributor));
         _use(FeeDistributor.admin.selector, address(distributor));
         _use(FeeDistributor.emergencyReturn.selector, address(distributor));
@@ -52,6 +54,8 @@ contract FeeDistributorInitializeTest is MCTest {
 
         assertEq(feeDistributor.votingEscrow(), address(veToken));
         assertEq(feeDistributor.startTime(), time);
+        assertEq(feeDistributor.lastTokenTime(), time);
+        assertEq(feeDistributor.timeCursor(), time);
         assertEq(feeDistributor.token(), address(coinA));
         assertEq(feeDistributor.admin(), alice);
         assertEq(feeDistributor.emergencyReturn(), bob);
