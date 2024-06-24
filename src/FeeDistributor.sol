@@ -632,83 +632,83 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @notice ストレージ変数の値を取得するための関数
      */
     function startTime() public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.startTime;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.startTime;
     }
 
     function timeCursor() public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.timeCursor;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.timeCursor;
     }
 
     function lastTokenTime() public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.lastTokenTime;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.lastTokenTime;
     }
 
     function totalReceived() public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.totalReceived;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.totalReceived;
     }
 
     function tokenLastBalance() public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.tokenLastBalance;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.tokenLastBalance;
     }
 
     function canCheckpointToken() public view returns (bool) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.canCheckpointToken;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.canCheckpointToken;
     }
 
     function isKilled() public view returns (bool) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.isKilled;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.isKilled;
     }
 
     function votingEscrow() public view returns (address) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.votingEscrow;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.votingEscrow;
     }
 
     function token() public view returns (address) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.token;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.token;
     }
 
     function admin() public view returns (address) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.admin;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.admin;
     }
 
     function futureAdmin() public view returns (address) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.futureAdmin;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.futureAdmin;
     }
 
     function emergencyReturn() public view returns (address) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.emergencyReturn;
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.emergencyReturn;
     }
 
     function timeCursorOf(address user) public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.timeCursorOf[user];
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.timeCursorOf[user];
     }
 
     function userEpochOf(address user) public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.userEpochOf[user];
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.userEpochOf[user];
     }
 
     function tokensPerWeek(uint256 week) public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.tokensPerWeek[week];
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.tokensPerWeek[week];
     }
 
     function veSupply(uint256 week) public view returns (uint256) {
-        FeeDistributorSchema.Storage storage ds = Storage.FeeDistributor();
-        return ds.veSupply[week];
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.veSupply[week];
     }
 
 
