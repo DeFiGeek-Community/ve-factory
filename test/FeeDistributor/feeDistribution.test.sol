@@ -222,6 +222,7 @@ contract FeeDistributorFeeDistributionTest is MCTest {
 
         feeDistributorInitialize(startTime);
 
+        vm.prank(charlie);
         coinA.transfer(address(feeDistributor), 1e19);
         feeDistributor.checkpointToken();
         vm.warp(block.timestamp + WEEK);
