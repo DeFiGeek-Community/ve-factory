@@ -9,13 +9,22 @@ import "src/Interfaces/FeeDistributorFacade.sol";
 contract DeployFeeDistributor is MCScript {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        require(deployerPrivateKey != 0, "PRIVATE_KEY is not set");
 
-        // .envからデプロイに必要な引数を読み込む
         address votingEscrow = vm.envAddress("VOTING_ESCROW");
+        require(votingEscrow != address(0), "VOTING_ESCROW is not set");
+
         uint256 startTime = vm.envUint("START_TIME");
+        require(startTime != 0, "START_TIME is not set");
+
         address token = vm.envAddress("TOKEN");
+        require(token != address(0), "TOKEN is not set");
+
         address admin = vm.envAddress("ADMIN");
+        require(admin != address(0), "ADMIN is not set");
+
         address emergencyReturn = vm.envAddress("EMERGENCY_RETURN");
+        require(emergencyReturn != address(0), "EMERGENCY_RETURN is not set");
 
         vm.startBroadcast(deployerPrivateKey);
 
