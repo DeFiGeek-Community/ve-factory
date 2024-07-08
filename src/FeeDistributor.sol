@@ -627,8 +627,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         _;
     }
 
-
-   /**
+    /**
      * @notice ストレージ変数の値を取得するための関数
      */
     function startTime() public view returns (uint256) {
@@ -710,6 +709,4 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         return $.veSupply[week];
     }
-
-
 }
