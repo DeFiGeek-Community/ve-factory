@@ -39,7 +39,8 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     ) public initializer {
         __ReentrancyGuard_init();
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         uint256 t = (startTime_ / WEEK) * WEEK;
         $.startTime = t;
         $.timeCursor = t;
@@ -48,49 +49,52 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $.emergencyReturn = emergencyReturn_;
     }
 
-function _checkpointToken(address tokenAddress_) internal {
-    MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-    MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
-    uint256 _tokenBalance = IERC20(tokenAddress_).balanceOf(address(this));
-    // tokenDataマッピングを使用して、トークンごとの状態を取得
-    uint256 _toDistribute = _tokenBalance - $token.tokenLastBalance;
-    $token.tokenLastBalance = _tokenBalance;
+    function _checkpointToken(address tokenAddress_) internal {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
+        uint256 _tokenBalance = IERC20(tokenAddress_).balanceOf(address(this));
+        // tokenDataマッピングを使用して、トークンごとの状態を取得
+        uint256 _toDistribute = _tokenBalance - $token.tokenLastBalance;
+        $token.tokenLastBalance = _tokenBalance;
 
-    uint256 _t = $token.lastTokenTime;
-    uint256 _sinceLast = block.timestamp - _t;
-    $token.lastTokenTime = block.timestamp;
-    uint256 _thisWeek = (_t / WEEK) * WEEK;
-    uint256 _nextWeek = 0;
+        uint256 _t = $token.lastTokenTime;
+        uint256 _sinceLast = block.timestamp - _t;
+        $token.lastTokenTime = block.timestamp;
+        uint256 _thisWeek = (_t / WEEK) * WEEK;
+        uint256 _nextWeek = 0;
 
-    for (uint256 i; i < 20; ) {
-        _nextWeek = _thisWeek + WEEK;
-        if (block.timestamp < _nextWeek) {
-            if (_sinceLast == 0 && block.timestamp == _t) {
-                $token.tokensPerWeek[_thisWeek] += _toDistribute;
+        for (uint256 i; i < 20; ) {
+            _nextWeek = _thisWeek + WEEK;
+            if (block.timestamp < _nextWeek) {
+                if (_sinceLast == 0 && block.timestamp == _t) {
+                    $token.tokensPerWeek[_thisWeek] += _toDistribute;
+                } else {
+                    $token.tokensPerWeek[_thisWeek] +=
+                        (_toDistribute * (block.timestamp - _t)) /
+                        _sinceLast;
+                }
+                break;
             } else {
-                $token.tokensPerWeek[_thisWeek] +=
-                    (_toDistribute * (block.timestamp - _t)) /
-                    _sinceLast;
+                if (_sinceLast == 0 && _nextWeek == _t) {
+                    $token.tokensPerWeek[_thisWeek] += _toDistribute;
+                } else {
+                    $token.tokensPerWeek[_thisWeek] +=
+                        (_toDistribute * (_nextWeek - _t)) /
+                        _sinceLast;
+                }
             }
-            break;
-        } else {
-            if (_sinceLast == 0 && _nextWeek == _t) {
-                $token.tokensPerWeek[_thisWeek] += _toDistribute;
-            } else {
-                $token.tokensPerWeek[_thisWeek] +=
-                    (_toDistribute * (_nextWeek - _t)) /
-                    _sinceLast;
+            _t = _nextWeek;
+            _thisWeek = _nextWeek;
+            unchecked {
+                ++i;
             }
         }
-        _t = _nextWeek;
-        _thisWeek = _nextWeek;
-        unchecked {
-            ++i;
-        }
+
+        emit CheckpointToken(block.timestamp, _toDistribute);
     }
-
-    emit CheckpointToken(block.timestamp, _toDistribute);
-}
 
     /***
      * @notice Update the token checkpoint
@@ -102,8 +106,11 @@ function _checkpointToken(address tokenAddress_) internal {
     function checkpointToken(address tokenAddress_) external {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
 
         require(
             msg.sender == $.admin ||
@@ -176,7 +183,8 @@ function _checkpointToken(address tokenAddress_) internal {
         address user_,
         uint256 timestamp_
     ) external view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         address _ve = $.votingEscrow;
         uint256 _maxUserEpoch = IVeToken(_ve).userPointEpoch(user_);
@@ -201,7 +209,8 @@ function _checkpointToken(address tokenAddress_) internal {
     }
 
     function _checkpointTotalSupply() internal {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         address _ve = $.votingEscrow;
         uint256 _t = $.timeCursor;
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
@@ -234,7 +243,8 @@ function _checkpointToken(address tokenAddress_) internal {
      * @dev The checkpoint is also updated by the first claimant each new epoch week. This function may be called independently of a claim, to reduce claiming gas costs.
      */
     function checkpointTotalSupply() external {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         address _ve = $.votingEscrow;
         uint256 _t = $.timeCursor;
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
@@ -274,8 +284,11 @@ function _checkpointToken(address tokenAddress_) internal {
         address ve_,
         uint256 lastTokenTime_
     ) internal returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
 
         // Minimal user_epoch is 0 (if user had no point)
         uint256 _userEpoch = 0;
@@ -370,7 +383,8 @@ function _checkpointToken(address tokenAddress_) internal {
                 }
                 if (_balanceOf > 0) {
                     _toDistribute +=
-                        (uint256(_balanceOf) * $token.tokensPerWeek[_weekCursor]) /
+                        (uint256(_balanceOf) *
+                            $token.tokensPerWeek[_weekCursor]) /
                         $.veSupply[_weekCursor];
                 }
                 _weekCursor += WEEK;
@@ -398,11 +412,16 @@ function _checkpointToken(address tokenAddress_) internal {
          less than `max_epoch`, the account may claim again.
      * @return uint256 Amount of fees claimed in the call
      */
-    function claim(address tokenAddress_) external nonReentrant returns (uint256) {
+    function claim(
+        address tokenAddress_
+    ) external nonReentrant returns (uint256) {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
 
         require(!$.isKilled, "Contract is killed");
 
@@ -424,7 +443,12 @@ function _checkpointToken(address tokenAddress_) internal {
             _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
         }
 
-        uint256 _amount = _claim(_userAddress, tokenAddress_, $.votingEscrow, _lastTokenTime);
+        uint256 _amount = _claim(
+            _userAddress,
+            tokenAddress_,
+            $.votingEscrow,
+            _lastTokenTime
+        );
         if (_amount != 0) {
             require(
                 IERC20(tokenAddress_).transfer(_userAddress, _amount),
@@ -446,11 +470,17 @@ function _checkpointToken(address tokenAddress_) internal {
      * @param addr_ Address to claim fees for
      * @return uint256 Amount of fees claimed in the call
      */
-    function claim(address userAddress_, address tokenAddress_) external nonReentrant returns (uint256) {
+    function claim(
+        address userAddress_,
+        address tokenAddress_
+    ) external nonReentrant returns (uint256) {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
 
         require(!$.isKilled, "Contract is killed");
 
@@ -471,7 +501,12 @@ function _checkpointToken(address tokenAddress_) internal {
             _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
         }
 
-        uint256 _amount = _claim(userAddress_, tokenAddress_, $.votingEscrow, _lastTokenTime);
+        uint256 _amount = _claim(
+            userAddress_,
+            tokenAddress_,
+            $.votingEscrow,
+            _lastTokenTime
+        );
         if (_amount != 0) {
             require(
                 IERC20(tokenAddress_).transfer(userAddress_, _amount),
@@ -498,8 +533,11 @@ function _checkpointToken(address tokenAddress_) internal {
     ) external nonReentrant returns (bool) {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
         require(!$.isKilled, "Contract is killed");
 
         if (block.timestamp >= $.timeCursor) {
@@ -524,7 +562,12 @@ function _checkpointToken(address tokenAddress_) internal {
                 break;
             }
 
-            uint256 _amount = _claim(_userAddress, tokenAddress_, $.votingEscrow, _lastTokenTime);
+            uint256 _amount = _claim(
+                _userAddress,
+                tokenAddress_,
+                $.votingEscrow,
+                _lastTokenTime
+            );
             if (_amount != 0) {
                 require(
                     IERC20(tokenAddress_).transfer(_userAddress, _amount),
@@ -552,14 +595,21 @@ function _checkpointToken(address tokenAddress_) internal {
     function burn(address tokenAddress_) external returns (bool) {
         require(_isTokenPresent(tokenAddress_), "Invalid token");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
 
         require(!$.isKilled, "Contract is killed");
 
         uint256 _amount = IERC20(tokenAddress_).balanceOf(msg.sender);
         if (_amount > 0) {
-            IERC20(tokenAddress_).transferFrom(msg.sender, address(this), _amount);
+            IERC20(tokenAddress_).transferFrom(
+                msg.sender,
+                address(this),
+                _amount
+            );
             if (
                 $.canCheckpointToken &&
                 block.timestamp > $token.lastTokenTime + 1 hours
@@ -573,7 +623,8 @@ function _checkpointToken(address tokenAddress_) internal {
     function addToken(address tokenAddress_) external onlyAdmin {
         require(!_isTokenPresent(tokenAddress_), "Token already added");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         $.tokens.push(tokenAddress_);
     }
@@ -581,7 +632,8 @@ function _checkpointToken(address tokenAddress_) internal {
     function removeToken(address tokenAddress_) external onlyAdmin {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         int256 tokenIndex = -1;
         for (uint256 i = 0; i < $.tokens.length; i++) {
             if ($.tokens[i] == tokenAddress_) {
@@ -601,14 +653,13 @@ function _checkpointToken(address tokenAddress_) internal {
         $.tokens.pop();
     }
 
-
-
     /***
      * @notice Commit transfer of ownership
      * @param addr_ New admin address
      */
     function commitAdmin(address addr_) external onlyAdmin {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         $.futureAdmin = addr_;
         emit CommitAdmin(addr_);
@@ -618,7 +669,8 @@ function _checkpointToken(address tokenAddress_) internal {
      * @notice Apply transfer of ownership
      */
     function applyAdmin() external onlyAdmin {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         require($.futureAdmin != address(0), "No admin set");
         $.admin = $.futureAdmin;
@@ -629,7 +681,8 @@ function _checkpointToken(address tokenAddress_) internal {
      * @notice Toggle permission for checkpointing by any account
      */
     function toggleAllowCheckpointToken() external onlyAdmin {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         $.canCheckpointToken = !$.canCheckpointToken;
         emit ToggleAllowCheckpointToken($.canCheckpointToken);
@@ -641,7 +694,8 @@ function _checkpointToken(address tokenAddress_) internal {
          and blocks the ability to claim or burn. The contract cannot be unkilled.
      */
     function killMe() external onlyAdmin {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         $.isKilled = true;
 
@@ -664,8 +718,11 @@ function _checkpointToken(address tokenAddress_) internal {
      * @param coin_ Token address
      * @return bool success
      */
-    function recoverBalance(address tokenAddress_) external onlyAdmin returns (bool) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+    function recoverBalance(
+        address tokenAddress_
+    ) external onlyAdmin returns (bool) {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         require(_isTokenPresent(tokenAddress_), "Cannot recover this token");
 
@@ -677,14 +734,16 @@ function _checkpointToken(address tokenAddress_) internal {
         return true;
     }
 
-
     function isTokenPresent(address tokenAddress) external view returns (bool) {
         return _isTokenPresent(tokenAddress);
     }
 
-    function _isTokenPresent(address tokenAddress_) internal view returns (bool) {
+    function _isTokenPresent(
+        address tokenAddress_
+    ) internal view returns (bool) {
         require(tokenAddress_ != address(0), "Invalid token address");
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         for (uint256 i = 0; i < $.tokens.length; i++) {
             if ($.tokens[i] == tokenAddress_) {
                 return true;
@@ -694,7 +753,8 @@ function _checkpointToken(address tokenAddress_) internal {
     }
 
     modifier onlyAdmin() {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
 
         require($.admin == msg.sender, "Access denied");
         _;
@@ -704,77 +764,103 @@ function _checkpointToken(address tokenAddress_) internal {
      * @notice ストレージ変数の値を取得するための関数
      */
     function startTime() public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.startTime;
     }
 
     function timeCursor() public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.timeCursor;
     }
 
     function lastTokenTime(address tokenAddress) public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.tokenData[tokenAddress].lastTokenTime;
     }
 
-    function tokenLastBalance(address tokenAddress) public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+    function tokenLastBalance(
+        address tokenAddress
+    ) public view returns (uint256) {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.tokenData[tokenAddress].tokenLastBalance;
     }
 
     function canCheckpointToken() public view returns (bool) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.canCheckpointToken;
     }
 
     function isKilled() public view returns (bool) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.isKilled;
     }
 
     function votingEscrow() public view returns (address) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.votingEscrow;
     }
 
     function tokens() public view returns (address[] memory) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.tokens;
     }
 
     function admin() public view returns (address) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.admin;
     }
 
     function futureAdmin() public view returns (address) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.futureAdmin;
     }
 
     function emergencyReturn() public view returns (address) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.emergencyReturn;
     }
 
-    function timeCursorOf(address tokenAddress, address user) public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+    function timeCursorOf(
+        address tokenAddress,
+        address user
+    ) public view returns (uint256) {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.tokenData[tokenAddress].timeCursorOf[user];
     }
 
-    function userEpochOf(address tokenAddress, address user) public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+    function userEpochOf(
+        address tokenAddress,
+        address user
+    ) public view returns (uint256) {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.tokenData[tokenAddress].userEpochOf[user];
     }
 
-    function tokensPerWeek(address tokenAddress, uint256 week) public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+    function tokensPerWeek(
+        address tokenAddress,
+        uint256 week
+    ) public view returns (uint256) {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.tokenData[tokenAddress].tokensPerWeek[week];
     }
 
     function veSupply(uint256 week) public view returns (uint256) {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
         return $.veSupply[week];
     }
 }
