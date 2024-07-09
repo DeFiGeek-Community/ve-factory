@@ -592,6 +592,56 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return true;
     }
 
+
+    function claimMultipleTokens(
+        address[] calldata tokenAddresses
+    ) external nonReentrant returns (bool) {
+        require(tokenAddresses.length > 0, "No tokens provided");
+
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage
+            .MultiTokenFeeDistributor();
+        require(!$.isKilled, "Contract is killed");
+
+        address userAddress = msg.sender;
+
+        for (uint256 i = 0; i < tokenAddresses.length; i++) {
+            address tokenAddress = tokenAddresses[i];
+            require(_isTokenPresent(tokenAddress), "Token not found");
+
+            if (block.timestamp >= $.timeCursor) {
+                _checkpointTotalSupply();
+            }
+
+            uint256 _lastTokenTime = $.tokenData[tokenAddress].lastTokenTime;
+            if (
+                $.canCheckpointToken &&
+                (block.timestamp > _lastTokenTime + 1 hours)
+            ) {
+                _checkpointToken(tokenAddress);
+                _lastTokenTime = block.timestamp;
+            }
+
+            // Adjust lastTokenTime to the start of the current week
+            _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
+
+            uint256 amount = _claim(
+                userAddress,
+                tokenAddress,
+                $.votingEscrow,
+                _lastTokenTime
+            );
+            if (amount > 0) {
+                require(
+                    IERC20(tokenAddress).transfer(userAddress, amount),
+                    "Transfer failed"
+                );
+                $.tokenData[tokenAddress].tokenLastBalance -= amount;
+            }
+        }
+
+        return true;
+    }
+
     /***
      * @notice Receive 3CRV into the contract and trigger a token checkpoint
      * @param coin_ Address of the coin being received (must be 3CRV)
