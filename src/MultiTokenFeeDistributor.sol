@@ -98,7 +98,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             }
         }
 
-        emit CheckpointToken(tokenAddress_ ,block.timestamp, _toDistribute);
+        emit CheckpointToken(tokenAddress_, block.timestamp, _toDistribute);
     }
 
     /***
@@ -403,7 +403,13 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $token.userEpochOf[userAddress_] = _userEpoch;
         $token.timeCursorOf[userAddress_] = _weekCursor;
 
-        emit Claimed(userAddress_, tokenAddress_, _toDistribute, _userEpoch, _maxUserEpoch);
+        emit Claimed(
+            userAddress_,
+            tokenAddress_,
+            _toDistribute,
+            _userEpoch,
+            _maxUserEpoch
+        );
 
         return _toDistribute;
     }
@@ -591,7 +597,6 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         return true;
     }
-
 
     function claimMultipleTokens(
         address[] calldata tokenAddresses
