@@ -15,8 +15,13 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     event CommitAdmin(address indexed admin);
     event ApplyAdmin(address indexed admin);
     event ToggleAllowCheckpointToken(bool toggleFlag);
-    event CheckpointToken(uint256 time, uint256 tokens);
+    event CheckpointToken(
+        address indexed tokenAddress,
+        uint256 time,
+        uint256 tokens
+    );
     event Claimed(
+        address indexed tokenAddress,
         address indexed recipient,
         uint256 amount,
         uint256 claimEpoch,
@@ -93,7 +98,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             }
         }
 
-        emit CheckpointToken(block.timestamp, _toDistribute);
+        emit CheckpointToken(tokenAddress_ ,block.timestamp, _toDistribute);
     }
 
     /***
@@ -398,7 +403,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $token.userEpochOf[userAddress_] = _userEpoch;
         $token.timeCursorOf[userAddress_] = _weekCursor;
 
-        emit Claimed(userAddress_, _toDistribute, _userEpoch, _maxUserEpoch);
+        emit Claimed(userAddress_, tokenAddress_, _toDistribute, _userEpoch, _maxUserEpoch);
 
         return _toDistribute;
     }
