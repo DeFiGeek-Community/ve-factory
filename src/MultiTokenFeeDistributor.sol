@@ -28,13 +28,12 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 maxEpoch
     );
 
-    /***
-     * @notice Contract constructor
-     * @param votingEscrow_ VotingEscrow contract address
-     * @param startTime_ Epoch time for fee distribution to start
-     * @param token_ Fee token address (3CRV)
-     * @param admin_ Admin address
-     * @param emergencyReturn_ Address to transfer `_token` balance to if this contract is killed
+    /**
+     * @notice Initializes the contract with necessary parameters.
+     * @param votingEscrow_ The address of the VotingEscrow contract.
+     * @param startTime_ The epoch time when fee distribution starts.
+     * @param admin_ The address of the admin.
+     * @param emergencyReturn_ The address where tokens are sent if the contract is killed.
      */
     function initialize(
         address votingEscrow_,
@@ -54,6 +53,10 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $.emergencyReturn = emergencyReturn_;
     }
 
+    /**
+     * @notice Internal function to update the token checkpoint.
+     * @param tokenAddress_ The address of the token to checkpoint.
+     */
     function _checkpointToken(address tokenAddress_) internal {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
@@ -102,7 +105,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /***
-     * @notice Update the token checkpoint
+     * 
+     * @notice Allows an external caller to checkpoint a token, subject to certain conditions.
+     * @param tokenAddress_ The address of the token to checkpoint.
      * @dev Calculates the total number of tokens to be distributed in a given week.
          During setup for the initial distribution this function is only callable
          by the contract owner. Beyond initial distro, it can be enabled for anyone
@@ -126,6 +131,12 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         _checkpointToken(tokenAddress_);
     }
 
+    /**
+     * @notice Finds the epoch corresponding to a given timestamp for veToken.
+     * @param ve_ The address of the veToken contract.
+     * @param timestamp_ The timestamp to find the epoch for.
+     * @return uint256 The epoch number.
+     */
     function _findTimestampEpoch(
         address ve_,
         uint256 timestamp_
@@ -151,6 +162,14 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return _min;
     }
 
+    /**
+     * @notice Finds the user epoch for a given timestamp.
+     * @param ve_ The address of the veToken contract.
+     * @param user_ The address of the user.
+     * @param timestamp_ The timestamp to find the user epoch for.
+     * @param maxUserEpoch_ The maximum epoch to consider.
+     * @return uint256 The user epoch.
+     */
     function _findTimestampUserEpoch(
         address ve_,
         address user_,
@@ -178,11 +197,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return _min;
     }
 
-    /***
-     * @notice Get the veYNWK balance for `user_` at `timestamp_`
-     * @param user_ Address to query balance for
-     * @param timestamp_ Epoch time
-     * @return uint256 veYNWK balance
+    /**
+     * @notice Get the veToken balance for a user at a specific timestamp.
+     * @param user_ Address to query balance for.
+     * @param timestamp_ Epoch time.
+     * @return uint256 veToken balance.
      */
     function veForAt(
         address user_,
@@ -213,6 +232,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         }
     }
 
+    /**
+     * @notice Internal function to update the total supply checkpoint.
+     */
     function _checkpointTotalSupply() internal {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
@@ -243,9 +265,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $.timeCursor = _t;
     }
 
-    /***
-     * @notice Update the veCRV total supply checkpoint
-     * @dev The checkpoint is also updated by the first claimant each new epoch week. This function may be called independently of a claim, to reduce claiming gas costs.
+    /**
+     * @notice External function to update the total veToken supply checkpoints.
+     * @dev This function iterates through the time periods since the last checkpoint, updating the total veToken supply at each weekly checkpoint. It is designed to be called externally to ensure the veToken supply is accurately recorded over time. This function plays a critical role in the fee distribution mechanism by ensuring that the veToken supply is up to date, which directly affects the calculation of fee distributions.
      */
     function checkpointTotalSupply() external {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
@@ -283,6 +305,15 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $.timeCursor = _t;
     }
 
+    /**
+     * @notice Internal function to calculate and distribute claimable tokens for a user.
+     * @param userAddress_ The address of the user claiming the tokens.
+     * @param tokenAddress_ The address of the token being claimed.
+     * @param ve_ The address of the Voting Escrow contract.
+     * @param lastTokenTime_ The last time the token was checkpointed.
+     * @return uint256 The amount of tokens distributed to the user.
+     * @dev This function calculates the amount of tokens a user is entitled to based on their veToken balance over time. It iterates through user epochs and token distribution weeks to calculate the claimable amount. It updates the user's last claim time and epoch to prevent double claiming.
+     */
     function _claim(
         address userAddress_,
         address tokenAddress_,
@@ -416,8 +447,8 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /***
      * @notice Claim fees for `msg.sender`
-     * @dev Each call to claim look at a maximum of 50 user veCRV points.
-         For accounts with many veCRV related actions, this function
+     * @dev Each call to claim look at a maximum of 50 user veToken points.
+         For accounts with many veToken related actions, this function
          may need to be called more than once to claim all available
          fees. In the `Claimed` event that fires, if `claim_epoch` is
          less than `max_epoch`, the account may claim again.
@@ -473,8 +504,8 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /***
      * @notice Claim fees for `addr_`
-     * @dev Each call to claim look at a maximum of 50 user veCRV points.
-         For accounts with many veCRV related actions, this function
+     * @dev Each call to claim look at a maximum of 50 user veToken points.
+         For accounts with many veToken related actions, this function
          may need to be called more than once to claim all available
          fees. In the `Claimed` event that fires, if `claim_epoch` is
          less than `max_epoch`, the account may claim again.
@@ -533,7 +564,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @notice Make multiple fee claims in a single call
      * @dev Used to claim for many accounts at once, or to make
          multiple claims for the same address when that address
-         has significant veCRV history
+         has significant veToken history
      * @param receivers_ List of addresses to claim for. Claiming
                       terminates at the first `ZERO_ADDRESS`.
      * @return bool success
@@ -598,6 +629,12 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Claims fees for multiple tokens for `msg.sender`.
+     * @param tokenAddresses An array of token addresses for which to claim fees.
+     * @return bool Returns true upon success.
+     * @dev This function allows a user to claim fees for multiple tokens in a single transaction. It iterates over the provided array of token addresses, calling the `claim` function for each token. It requires that each token is present in the list of tokens that can be checkpointed.
+     */
     function claimMultipleTokens(
         address[] calldata tokenAddresses
     ) external nonReentrant returns (bool) {
@@ -647,10 +684,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return true;
     }
 
-    /***
-     * @notice Receive 3CRV into the contract and trigger a token checkpoint
-     * @param coin_ Address of the coin being received (must be 3CRV)
-     * @return bool success
+    /**
+     * @notice Allows the burning of tokens to trigger a checkpoint.
+     * @param tokenAddress_ The address of the token being burned.
+     * @return bool Returns true upon success.
+     * @dev This function allows tokens to be burned from the caller's balance to trigger a checkpoint for the token. It checks if the contract is not killed and if the token is present in the list of tokens. If the conditions are met, it transfers the tokens from the caller to the contract and triggers a checkpoint if allowed.
      */
     function burn(address tokenAddress_) external returns (bool) {
         require(_isTokenPresent(tokenAddress_), "Invalid token");
@@ -680,6 +718,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return true;
     }
 
+    /**
+     * @notice Allows the admin to add a new token to the list of tokens that can be checkpointed.
+     * @param tokenAddress_ The address of the token to be added.
+     * @dev This function updates the internal list of tokens. It requires the caller to be the admin.
+     */
     function addToken(address tokenAddress_) external onlyAdmin {
         require(!_isTokenPresent(tokenAddress_), "Token already added");
 
@@ -689,6 +732,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $.tokens.push(tokenAddress_);
     }
 
+    /**
+     * @notice Allows the admin to remove a token from the list of tokens that can be checkpointed.
+     * @param tokenAddress_ The address of the token to be removed.
+     * @dev This function updates the internal list of tokens. It requires the caller to be the admin and the token to be present in the list.
+     */
     function removeToken(address tokenAddress_) external onlyAdmin {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
@@ -713,9 +761,10 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         $.tokens.pop();
     }
 
-    /***
-     * @notice Commit transfer of ownership
-     * @param addr_ New admin address
+    /**
+     * @notice Commits a new admin address, preparing for the admin transfer.
+     * @param addr_ The address of the new admin.
+     * @dev This function sets a new future admin address. The change is not applied until `applyAdmin` is called. It requires the caller to be the current admin.
      */
     function commitAdmin(address addr_) external onlyAdmin {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
@@ -725,8 +774,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         emit CommitAdmin(addr_);
     }
 
-    /***
-     * @notice Apply transfer of ownership
+    /**
+     * @notice Applies the admin transfer to the previously committed admin address.
+     * @dev This function changes the admin to the previously committed address by `commitAdmin`. It requires the caller to be the current admin.
      */
     function applyAdmin() external onlyAdmin {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
@@ -737,8 +787,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         emit ApplyAdmin($.futureAdmin);
     }
 
-    /***
-     * @notice Toggle permission for checkpointing by any account
+    /**
+     * @notice Toggles the permission for any account to checkpoint tokens.
+     * @dev This function toggles the ability for any account to call `checkpointToken`, changing it from admin-only to public or vice versa. It requires the caller to be the admin.
      */
     function toggleAllowCheckpointToken() external onlyAdmin {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
@@ -748,10 +799,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         emit ToggleAllowCheckpointToken($.canCheckpointToken);
     }
 
-    /***
-     * @notice Kill the contract
-     * @dev Killing transfers the entire 3CRV balance to the emergency return address
-         and blocks the ability to claim or burn. The contract cannot be unkilled.
+    /**
+     * @notice Kills the contract, disabling all token claims and transfers.
+     * @dev This function disables all functionality of the contract and transfers all tokens to the emergency return address. It can only be called by the admin and cannot be reversed.
      */
     function killMe() external onlyAdmin {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
@@ -772,11 +822,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         }
     }
 
-    /***
-     * @notice Recover ERC20 tokens from this contract
+    /**
+     * @notice Recover ERC20 tokens from this contract.
      * @dev Tokens are sent to the emergency return address.
-     * @param coin_ Token address
-     * @return bool success
+     * @param tokenAddress_ Token address.
+     * @return bool success.
      */
     function recoverBalance(
         address tokenAddress_
@@ -794,10 +844,24 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return true;
     }
 
-    function isTokenPresent(address tokenAddress) external view returns (bool) {
-        return _isTokenPresent(tokenAddress);
+    /**
+     * @notice Checks if a token is present in the list of tokens that can be checkpointed.
+     * @param tokenAddress_ The address of the token to check.
+     * @return bool True if the token is present, false otherwise.
+     * @dev This function checks the internal list of tokens to see if a token is present. It is used internally and exposed externally for convenience.
+     */
+    function isTokenPresent(
+        address tokenAddress_
+    ) external view returns (bool) {
+        return _isTokenPresent(tokenAddress_);
     }
 
+    /**
+     * @notice Checks if a token is present in the list of tokens that can be checkpointed.
+     * @param tokenAddress_ The address of the token to check.
+     * @return bool True if the token is present, false otherwise.
+     * @dev This function checks the internal list of tokens to determine if a given token is eligible for checkpointing and fee distribution. It is used to validate token addresses in various functions.
+     */
     function _isTokenPresent(
         address tokenAddress_
     ) internal view returns (bool) {
@@ -821,7 +885,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /**
-     * @notice ストレージ変数の値を取得するための関数
+     * @notice Returns the start time of the fee distribution.
+     * @return uint256 The epoch time when fee distribution starts.
+     * @dev This function returns the start time for the fee distribution process. This is the time from which the contract begins to calculate and distribute fees to token holders.
      */
     function startTime() public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
@@ -829,18 +895,33 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return $.startTime;
     }
 
+    /**
+     * @notice Returns the current time cursor for fee distribution.
+     * @return uint256 The current time cursor.
+     * @dev This function returns the current time cursor, indicating the point up to which fees have been distributed. This helps in managing the distribution process over time, ensuring that fees are distributed in chronological order.
+     */
     function timeCursor() public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.timeCursor;
     }
 
+    /**
+     * @notice Returns the last token time for a given token.
+     * @param tokenAddress The address of the token.
+     * @return uint256 The last time the token was checkpointed.
+     */
     function lastTokenTime(address tokenAddress) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.tokenData[tokenAddress].lastTokenTime;
     }
 
+    /**
+     * @notice Returns the last known balance of a token before the last checkpoint.
+     * @param tokenAddress The address of the token.
+     * @return uint256 The token balance at the last checkpoint.
+     */
     function tokenLastBalance(
         address tokenAddress
     ) public view returns (uint256) {
@@ -849,24 +930,40 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return $.tokenData[tokenAddress].tokenLastBalance;
     }
 
+    /**
+     * @notice Checks if the contract allows for tokens to be checkpointed by any account.
+     * @return bool True if checkpointing by any account is allowed, false otherwise.
+     */
     function canCheckpointToken() public view returns (bool) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.canCheckpointToken;
     }
 
+    /**
+     * @notice Checks if the contract is killed.
+     * @return bool True if the contract is killed, false otherwise.
+     */
     function isKilled() public view returns (bool) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.isKilled;
     }
 
+    /**
+     * @notice Returns the address of the Voting Escrow contract.
+     * @return address The address of the Voting Escrow contract.
+     */
     function votingEscrow() public view returns (address) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.votingEscrow;
     }
 
+    /**
+     * @notice Returns the list of tokens that can be checkpointed.
+     * @return address[] The list of token addresses.
+     */
     function tokens() public view returns (address[] memory) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
@@ -879,18 +976,32 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return $.admin;
     }
 
+    /**
+     * @notice Returns the future admin address that will become admin after calling `applyAdmin`.
+     * @return address The address set to become the future admin.
+     */
     function futureAdmin() public view returns (address) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.futureAdmin;
     }
 
+    /**
+     * @notice Returns the emergency return address where tokens are sent if the contract is killed.
+     * @return address The emergency return address.
+     */
     function emergencyReturn() public view returns (address) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
         return $.emergencyReturn;
     }
 
+    /**
+     * @notice Returns the time cursor for a given token and user.
+     * @param tokenAddress The address of the token.
+     * @param user The address of the user.
+     * @return uint256 The time cursor of the user for the specified token.
+     */
     function timeCursorOf(
         address tokenAddress,
         address user
@@ -900,6 +1011,12 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return $.tokenData[tokenAddress].timeCursorOf[user];
     }
 
+    /**
+     * @notice Returns the user epoch of a given token and user.
+     * @param tokenAddress The address of the token.
+     * @param user The address of the user.
+     * @return uint256 The user epoch for the specified token and user.
+     */
     function userEpochOf(
         address tokenAddress,
         address user
@@ -909,6 +1026,12 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return $.tokenData[tokenAddress].userEpochOf[user];
     }
 
+    /**
+     * @notice Returns the number of tokens distributed per week for a given token and week.
+     * @param tokenAddress The address of the token.
+     * @param week The week number.
+     * @return uint256 The number of tokens distributed for the specified week.
+     */
     function tokensPerWeek(
         address tokenAddress,
         uint256 week
@@ -918,6 +1041,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         return $.tokenData[tokenAddress].tokensPerWeek[week];
     }
 
+    /**
+     * @notice Returns the total veToken supply at a given week.
+     * @param week The week number.
+     * @return uint256 The total veToken supply for the specified week.
+     */
     function veSupply(uint256 week) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
