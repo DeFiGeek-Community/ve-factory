@@ -31,13 +31,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     /**
      * @notice Initializes the contract with necessary parameters.
      * @param votingEscrow_ The address of the VotingEscrow contract.
-     * @param startTime_ The epoch time when fee distribution starts.
      * @param admin_ The address of the admin.
      * @param emergencyReturn_ The address where tokens are sent if the contract is killed.
      */
     function initialize(
         address votingEscrow_,
-        uint256 startTime_,
         address admin_,
         address emergencyReturn_
     ) public initializer {
@@ -45,9 +43,6 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
-        uint256 t = (startTime_ / WEEK) * WEEK;
-        $.startTime = t;
-        $.timeCursor = t;
         $.votingEscrow = votingEscrow_;
         $.admin = admin_;
         $.emergencyReturn = emergencyReturn_;
@@ -719,16 +714,29 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /**
-     * @notice Allows the admin to add a new token to the list of tokens that can be checkpointed.
+     * @notice Allows the admin to add a new token to the list of tokens eligible for checkpointing.
      * @param tokenAddress_ The address of the token to be added.
+     * @param startTime_ The start time for the token's fee distribution.
      * @dev This function updates the internal list of tokens. It requires the caller to be the admin.
+     * The start time is aligned to the beginning of a week based on the constant WEEK.
      */
-    function addToken(address tokenAddress_) external onlyAdmin {
+    function addToken(
+        address tokenAddress_,
+        uint256 startTime_
+    ) external onlyAdmin {
         require(!_isTokenPresent(tokenAddress_), "Token already added");
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
-
+        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[
+            tokenAddress_
+        ];
+        uint256 t = (startTime_ / WEEK) * WEEK;
+        $token.lastTokenTime = t;
+        if ($.startTime == 0) {
+            $.startTime = t;
+            $.timeCursor = t;
+        }
         $.tokens.push(tokenAddress_);
     }
 
