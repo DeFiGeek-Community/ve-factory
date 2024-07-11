@@ -27,7 +27,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @notice Contract constructor
      * @param votingEscrow_ VotingEscrow contract address
      * @param startTime_ Epoch time for fee distribution to start
-     * @param token_ Fee token address (3CRV)
+     * @param token_ Fee token address
      * @param admin_ Admin address
      * @param emergencyReturn_ Address to transfer `_token` balance to if this contract is killed
      */
@@ -164,10 +164,10 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /***
-     * @notice Get the veYNWK balance for `user_` at `timestamp_`
+     * @notice Get the veToken balance for `user_` at `timestamp_`
      * @param user_ Address to query balance for
      * @param timestamp_ Epoch time
-     * @return uint256 veYNWK balance
+     * @return uint256 veToken balance
      */
     function veForAt(
         address user_,
@@ -227,7 +227,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /***
-     * @notice Update the veCRV total supply checkpoint
+     * @notice Update the veToken total supply checkpoint
      * @dev The checkpoint is also updated by the first claimant each new epoch week. This function may be called independently of a claim, to reduce claiming gas costs.
      */
     function checkpointTotalSupply() external {
@@ -386,8 +386,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /***
      * @notice Claim fees for `msg.sender`
-     * @dev Each call to claim look at a maximum of 50 user veCRV points.
-         For accounts with many veCRV related actions, this function
+     * @dev Each call to claim look at a maximum of 50 user veToken points.
+         For accounts with many veToken related actions, this function
          may need to be called more than once to claim all available
          fees. In the `Claimed` event that fires, if `claim_epoch` is
          less than `max_epoch`, the account may claim again.
@@ -428,8 +428,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /***
      * @notice Claim fees for `addr_`
-     * @dev Each call to claim look at a maximum of 50 user veCRV points.
-         For accounts with many veCRV related actions, this function
+     * @dev Each call to claim look at a maximum of 50 user veToken points.
+         For accounts with many veToken related actions, this function
          may need to be called more than once to claim all available
          fees. In the `Claimed` event that fires, if `claim_epoch` is
          less than `max_epoch`, the account may claim again.
@@ -473,7 +473,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @notice Make multiple fee claims in a single call
      * @dev Used to claim for many accounts at once, or to make
          multiple claims for the same address when that address
-         has significant veCRV history
+         has significant veToken history
      * @param receivers_ List of addresses to claim for. Claiming
                       terminates at the first `ZERO_ADDRESS`.
      * @return bool success
@@ -528,8 +528,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /***
-     * @notice Receive 3CRV into the contract and trigger a token checkpoint
-     * @param coin_ Address of the coin being received (must be 3CRV)
+     * @notice Receive Token into the contract and trigger a token checkpoint
+     * @param coin_ Address of the coin being received
      * @return bool success
      */
     function burn(address coin_) external returns (bool) {
@@ -585,7 +585,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /***
      * @notice Kill the contract
-     * @dev Killing transfers the entire 3CRV balance to the emergency return address
+     * @dev Killing transfers the entire Token balance to the emergency return address
          and blocks the ability to claim or burn. The contract cannot be unkilled.
      */
     function killMe() external onlyAdmin {
