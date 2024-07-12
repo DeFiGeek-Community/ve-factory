@@ -5,7 +5,6 @@ contract MultiTokenFeeDistributorFacade {
     // Initialization and administrative functions
     function initialize(
         address votingEscrow_,
-        uint256 startTime_,
         address admin_,
         address emergencyReturn_
     ) external {}
@@ -21,7 +20,7 @@ contract MultiTokenFeeDistributorFacade {
     function recoverBalance(address token_) external returns (bool) {}
 
     // Token management functions
-    function addToken(address token_) external {}
+    function addToken(address token_, uint256 startTime_) external {}
 
     function removeToken(address token_) external {}
 
