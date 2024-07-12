@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {MCScript} from "@mc/devkit/MCScript.sol";
+import {MCScript} from "@mc/devkit/Flattened.sol";
 import "forge-std/console.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/FeeDistributorFacade.sol";
@@ -44,7 +44,7 @@ contract DeployFeeDistributor is MCScript {
         // 初期化関数とその引数をエンコード
         bytes memory initializerData = abi.encodeCall(
             FeeDistributor.initialize,
-            (votingEscrow, startTime, startTime, startTime, startTime)
+            (votingEscrow, startTime, token, admin, emergencyReturn)
         );
         FeeDistributor distributor = new FeeDistributor();
 
