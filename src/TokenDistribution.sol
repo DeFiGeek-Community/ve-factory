@@ -62,8 +62,8 @@ contract TokenDistribution {
         startEpochTime = block.timestamp + inflationDelay - rateReductionTime;
         startTime = block.timestamp;
         miningEpoch = -1;
-        rate = 0;
-        startEpochSupply = 0;
+        // rate = 0;
+        // startEpochSupply = 0;
         totalMintAmount = totalMintAmount_;
         IERC20(tokenAddr).transferFrom(
             msg.sender,
@@ -81,7 +81,7 @@ contract TokenDistribution {
         uint256 _startEpochSupply = startEpochSupply;
 
         startEpochTime += rateReductionTime;
-        miningEpoch += 1;
+        ++miningEpoch;
 
         if (_rate == 0 && miningEpoch < 1) {
             _rate = initialRate;
@@ -159,7 +159,7 @@ contract TokenDistribution {
         uint256 end
     ) external view returns (uint256) {
         require(start <= end, "dev: start > end"); // dev: start > end
-        uint256 to_mint = 0;
+        uint256 to_mint;
         uint256 currentEpochTime = startEpochTime;
         uint256 currentRate = rate;
 
@@ -203,7 +203,7 @@ contract TokenDistribution {
             require(currentRate <= initialRate, "This should never happen"); // This should never happen
 
             unchecked {
-                i++;
+                ++i;
             }
         }
 
