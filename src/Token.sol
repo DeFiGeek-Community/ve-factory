@@ -70,7 +70,7 @@ contract Token is ERC20Permit {
         startEpochTime = block.timestamp + inflationDelay - rateReductionTime;
         startTime = block.timestamp;
         miningEpoch = -1;
-        rate = 0;
+        // rate = 0;
         startEpochSupply = _initialSupply;
     }
 
@@ -87,7 +87,7 @@ contract Token is ERC20Permit {
         uint256 _startEpochSupply = startEpochSupply;
 
         startEpochTime += rateReductionTime;
-        miningEpoch += 1;
+        ++miningEpoch;
 
         if (_rate == 0 && miningEpoch < 1) {
             _rate = initialRate;
@@ -165,7 +165,7 @@ contract Token is ERC20Permit {
         uint256 end
     ) external view returns (uint256) {
         require(start <= end, "dev: start > end"); // dev: start > end
-        uint256 to_mint = 0;
+        uint256 to_mint;
         uint256 currentEpochTime = startEpochTime;
         uint256 currentRate = rate;
 
@@ -209,7 +209,7 @@ contract Token is ERC20Permit {
             require(currentRate <= initialRate, "This should never happen"); // This should never happen
 
             unchecked {
-                i++;
+                ++i;
             }
         }
 
