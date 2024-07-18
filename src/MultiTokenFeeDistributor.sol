@@ -591,7 +591,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         }
 
         _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
-        uint256 _totals;
+        uint256 _total;
         uint256 _l = receivers_.length;
         for (uint256 i; i < _l; ) {
             address _userAddress = receivers_[i];
