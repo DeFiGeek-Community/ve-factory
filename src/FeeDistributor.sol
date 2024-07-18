@@ -61,7 +61,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _sinceLast = block.timestamp - _t;
         $.lastTokenTime = block.timestamp;
         uint256 _thisWeek = (_t / WEEK) * WEEK;
-        uint256 _nextWeek = 0;
+        uint256 _nextWeek;
 
         for (uint256 i; i < 20; ) {
             _nextWeek = _thisWeek + WEEK;
@@ -115,11 +115,11 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         address ve_,
         uint256 timestamp_
     ) internal view returns (uint256) {
-        uint256 _min = 0;
+        uint256 _min;
         uint256 _max = IVeToken(ve_).epoch();
 
         unchecked {
-            for (uint256 i; i < 128; i++) {
+            for (uint256 i; i < 128; ++i) {
                 if (_min >= _max) {
                     break;
                 }
@@ -142,11 +142,11 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 timestamp_,
         uint256 maxUserEpoch_
     ) internal view returns (uint256) {
-        uint256 _min = 0;
+        uint256 _min;
         uint256 _max = maxUserEpoch_;
 
         unchecked {
-            for (uint256 i; i < 128; i++) {
+            for (uint256 i; i < 128; ++i) {
                 if (_min >= _max) {
                     break;
                 }
@@ -211,7 +211,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 uint256 _epoch = _findTimestampEpoch(_ve, _t);
                 FeeDistributorSchema.Point memory _pt = IVeToken(_ve)
                     .pointHistory(_epoch);
-                int128 _dt = 0;
+                int128 _dt;
                 if (_t > _pt.ts) {
                     _dt = int128(int256(_t) - int256(_pt.ts));
                 }
@@ -244,7 +244,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 uint256 _epoch = _findTimestampEpoch(_ve, _t);
                 FeeDistributorSchema.Point memory _pt = IVeToken(_ve)
                     .pointHistory(_epoch);
-                uint256 _dt = 0;
+                uint256 _dt;
                 if (_t > _pt.ts) {
                     _dt = uint256(int256(_t) - int256(_pt.ts));
                 }
@@ -273,8 +273,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
 
         // Minimal user_epoch is 0 (if user had no point)
-        uint256 _userEpoch = 0;
-        uint256 _toDistribute = 0;
+        uint256 _userEpoch;
+        uint256 _toDistribute;
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(addr_);
         uint256 _startTime = $.startTime;
@@ -326,7 +326,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             } else if (
                 _weekCursor >= _userPoint.ts && _userEpoch <= _maxUserEpoch
             ) {
-                _userEpoch += 1;
+                ++_userEpoch;
                 _oldUserPoint = FeeDistributorSchema.Point({
                     bias: _userPoint.bias,
                     slope: _userPoint.slope,
@@ -499,7 +499,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         }
 
         _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
-        uint256 _total = 0;
+        uint256 _total;
         uint256 _l = receivers_.length;
         for (uint256 i; i < _l; ) {
             address _addr = receivers_[i];
