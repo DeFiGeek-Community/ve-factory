@@ -724,7 +724,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         address tokenAddress_,
         uint256 startTime_
     ) external onlyAdmin {
-        require(_isTokenPresent(tokenAddress_), "Token already added");
+        require(!_isTokenPresent(tokenAddress_), "Token already added");
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage
             .MultiTokenFeeDistributor();
