@@ -82,6 +82,8 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         );
     }
 
+     // このテストでは、チェックポイントトークンの許可後に請求が正しく行われるかを確認します。
+     // 特に、Aliceがトークンをロックし、チェックポイント後に請求を行うシナリオをテストします。
     function testClaimWithCheckpointAfterToggle() public {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
@@ -113,6 +115,8 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         assertTrue(abs(balanceAlice - 1e18) < 20);
     }
 
+    // このテストでは、複数回にわたるトークンの預金とチェックポイント後、
+    // Aliceが期待通りのトークン残高を請求できるかを確認します。
     function testAccumulatedClaimsAfterMultipleTokenDeposits() public {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
@@ -153,6 +157,9 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         assertEq(balanceAfterSecondClaim, 3e18);
     }
 
+    // このテストでは、VeTokenの残高がない状態での請求が失敗することを確認します。
+    // Aliceがトークンをロックし、チェックポイント後に請求を試みるが、
+    // VeTokenの残高がないために請求が加算されないことを検証します。
     function testClaimFailsWithoutVeTokenBalance() public {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
@@ -194,6 +201,8 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         assertEq(balanceAfterSecondAttempt, balanceAfterFirstClaim);
     }
 
+    // このテストでは、大量のユーザー（10000人）がトークンをロックし、
+    // それぞれが請求を行った際に正しい量のトークンを受け取れるかを確認します。
     function testClaimWithLargeNumberOfUsers() public {
         uint256 userCount = 10000; // テストするユーザーの数
         uint256 amount = 1e18; // 各ユーザーがロックするトークンの量
