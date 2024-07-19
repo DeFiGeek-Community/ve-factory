@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "src/Interfaces/IVeFactory.sol";
 import "src/test/SampleToken.sol";
 import "src/VeFactory.sol";
-import "script/DeployScript.s.sol";
+import "script/DeployVeFactory.s.sol";
 
 contract VeFactoryTest is Test, DeployVeFactory {
     IVeFactory factory;
