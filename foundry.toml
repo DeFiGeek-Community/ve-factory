@@ -5,6 +5,7 @@ libs = ["lib"]
 ffi = true
 ast = true
 build_info = true
+viaIR = true
 extra_output = ["storageLayout"]
 fs_permissions = [{ access = "read", path = "./out/"}, { access = "read", path = "./mc.toml" }, { access = "read", path = "./lib/mc/mc.toml" }]
 
