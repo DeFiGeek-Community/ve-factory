@@ -45,8 +45,8 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
             FeeDistributor.checkpointTotalSupply.selector,
             address(distributor)
         );
-        _use(bytes4(keccak256("claim()")), address(distributor));
-        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claim.selector, address(distributor));
+        _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
         _use(
@@ -105,11 +105,11 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         vm.startPrank(alice);
 
         vm.warp(block.timestamp + 6 days);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         assertEq(coinA.balanceOf(alice), 0);
 
         vm.warp(block.timestamp + 1 days);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         int256 balanceAlice = safeToInt256(coinA.balanceOf(alice));
 
         assertTrue(abs(balanceAlice - 1e18) < 20);
@@ -138,7 +138,7 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         // Aliceが1回目の請求を行い、トークンの残高を確認する
         vm.warp(block.timestamp + WEEK);
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceAfterFirstClaim = coinA.balanceOf(alice);
         assertEq(balanceAfterFirstClaim, 1e18);
 
@@ -150,7 +150,7 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
 
         // Aliceが2回目の請求を行い、トークンの残高を確認する
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceAfterSecondClaim = coinA.balanceOf(alice);
 
         // 2回目の請求で2e18が加算されていることを確認
@@ -181,7 +181,7 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
         // Aliceが請求を行い、トークンの残高を確認する
         vm.warp(block.timestamp + WEEK);
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceAfterFirstClaim = coinA.balanceOf(alice);
         assertEq(balanceAfterFirstClaim, 1e18);
 
@@ -194,7 +194,7 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
 
         // veTokenの残高がない状態でAliceが請求を試みる
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceAfterSecondAttempt = coinA.balanceOf(alice);
 
         // veTokenの残高がないため、2回目の請求でトークンが加算されていないことを確認
@@ -236,7 +236,7 @@ contract FeeDistributorClaimFunctionalityTest is MCTest {
             uint256 balanceBefore = coinA.balanceOf(user); // claim前のトークン残高を記録
 
             vm.prank(user);
-            feeDistributor.claim(user);
+            feeDistributor.claimFor(user);
 
             uint256 balanceAfter = coinA.balanceOf(user); // claim後のトークン残高を記録
             uint256 claimedAmount = balanceAfter - balanceBefore; // claimによって得られたトークン量を計算

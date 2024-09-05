@@ -45,8 +45,8 @@ contract FeeDistributorFeeDistributionTest is MCTest {
             FeeDistributor.checkpointTotalSupply.selector,
             address(distributor)
         );
-        _use(bytes4(keccak256("claim()")), address(distributor));
-        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claim.selector, address(distributor));
+        _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
     }
@@ -97,10 +97,10 @@ contract FeeDistributorFeeDistributionTest is MCTest {
         vm.warp(block.timestamp + 2 * WEEK);
 
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceBefore = coinA.balanceOf(alice);
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceAfter = coinA.balanceOf(alice);
 
         assertEq(balanceAfter - balanceBefore, 0);
@@ -135,7 +135,7 @@ contract FeeDistributorFeeDistributionTest is MCTest {
         vm.warp(block.timestamp + WEEK);
         feeDistributor.checkpointToken();
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
 
         assertTrue(
             abs(
@@ -161,7 +161,7 @@ contract FeeDistributorFeeDistributionTest is MCTest {
         feeDistributor.checkpointToken();
         vm.warp(block.timestamp + WEEK);
         feeDistributor.checkpointToken();
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
 
         assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - 1e19) < 10);
     }
@@ -192,7 +192,7 @@ contract FeeDistributorFeeDistributionTest is MCTest {
         feeDistributor.checkpointToken();
         vm.warp(block.timestamp + WEEK);
         feeDistributor.checkpointToken();
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
 
         uint256 tokensToExclude = feeDistributor.tokensPerWeek(excludeTime);
         assertTrue(
@@ -227,8 +227,8 @@ contract FeeDistributorFeeDistributionTest is MCTest {
         feeDistributor.checkpointToken();
         vm.warp(block.timestamp + WEEK);
         feeDistributor.checkpointToken();
-        feeDistributor.claim(alice);
-        feeDistributor.claim(bob);
+        feeDistributor.claimFor(alice);
+        feeDistributor.claimFor(bob);
 
         int256 balanceAlice = safeToInt256(coinA.balanceOf(alice));
         int256 balanceBob = safeToInt256(coinA.balanceOf(bob));

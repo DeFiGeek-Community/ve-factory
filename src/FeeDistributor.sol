@@ -436,7 +436,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param addr_ Address to claim fees for
      * @return uint256 Amount of fees claimed in the call
      */
-    function claim(address addr_) external nonReentrant returns (uint256) {
+    function claimFor(address addr_) external nonReentrant returns (uint256) {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         require(!$.isKilled, "Contract is killed");
 

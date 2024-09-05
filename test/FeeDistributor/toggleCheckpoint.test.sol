@@ -45,8 +45,8 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
             FeeDistributor.checkpointTotalSupply.selector,
             address(distributor)
         );
-        _use(bytes4(keccak256("claim()")), address(distributor));
-        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claim.selector, address(distributor));
+        _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
         _use(
@@ -102,10 +102,10 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
         veToken.createLock(amount, block.timestamp + 3 * WEEK);
         vm.warp(block.timestamp + 2 * WEEK);
 
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceBefore = coinA.balanceOf(alice);
 
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         uint256 balanceAfter = coinA.balanceOf(alice);
 
         assertEq(balanceAfter - balanceBefore, 0);
@@ -135,7 +135,7 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
 
         vm.warp(block.timestamp + WEEK * 10);
         vm.prank(alice);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
         coinA.balanceOf(address(this));
 
         assertTrue(
@@ -161,7 +161,7 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 1e19);
         vm.warp(block.timestamp + WEEK);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
 
         assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - 1e19) < 1000);
     }
@@ -190,7 +190,7 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 10 ** 19);
         vm.warp(block.timestamp + WEEK);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
 
         assertTrue(abs(10 ** 19 - safeToInt256(coinA.balanceOf(alice))) < 1000);
     }
@@ -219,8 +219,8 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
         feeDistributor.checkpointToken();
         vm.warp(block.timestamp + WEEK);
         feeDistributor.checkpointToken();
-        feeDistributor.claim(alice);
-        feeDistributor.claim(bob);
+        feeDistributor.claimFor(alice);
+        feeDistributor.claimFor(bob);
 
         int256 balanceAlice = safeToInt256(coinA.balanceOf(alice));
         int256 balanceBob = safeToInt256(coinA.balanceOf(bob));

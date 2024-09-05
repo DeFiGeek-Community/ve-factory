@@ -507,7 +507,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param addr_ Address to claim fees for
      * @return uint256 Amount of fees claimed in the call
      */
-    function claim(
+    function claimFor(
         address userAddress_,
         address tokenAddress_
     ) external nonReentrant returns (uint256) {

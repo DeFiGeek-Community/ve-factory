@@ -40,8 +40,8 @@ contract FeeDistributorCheckpointTest is MCTest {
         );
         _use(FeeDistributor.timeCursor.selector, address(distributor));
         _use(FeeDistributor.veSupply.selector, address(distributor));
-        _use(bytes4(keccak256("claim()")), address(distributor));
-        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claim.selector, address(distributor));
+        _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.lastTokenTime.selector, address(distributor));
         _use(
             FeeDistributor.toggleAllowCheckpointToken.selector,

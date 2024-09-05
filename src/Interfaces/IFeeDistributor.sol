@@ -13,7 +13,7 @@ interface IFeeDistributor {
 
     function claim() external returns (uint256);
 
-    function claim(address addr_) external returns (uint256);
+    function claimFor(address addr_) external returns (uint256);
 
     function claimMany(address[] memory receivers_) external returns (bool);
 

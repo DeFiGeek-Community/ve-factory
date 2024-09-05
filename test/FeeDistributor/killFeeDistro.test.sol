@@ -34,8 +34,8 @@ contract FeeDistributorKillFeeDistroTest is MCTest {
         _use(FeeDistributor.initialize.selector, address(distributor));
         _use(FeeDistributor.isKilled.selector, address(distributor));
         _use(FeeDistributor.killMe.selector, address(distributor));
-        _use(bytes4(keccak256("claim()")), address(distributor));
-        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claim.selector, address(distributor));
+        _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.emergencyReturn.selector, address(distributor));
 
@@ -102,7 +102,7 @@ contract FeeDistributorKillFeeDistroTest is MCTest {
         feeDistributor.killMe();
         vm.expectRevert();
         vm.prank(bob);
-        feeDistributor.claim(alice);
+        feeDistributor.claimFor(alice);
     }
 
     function testCannotClaimManyAfterKilled() public {
