@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {MCScript} from "@mc/devkit/Flattened.sol";
+import {MCDevKit} from "@mc/devkit/MCDevKit.sol";
+import {MCScript} from "@mc/devkit/MCScript.sol";
 import "forge-std/console.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/FeeDistributorFacade.sol";
 
 contract DeployFeeDistributor is MCScript {
-    function run() external {
+    function run() public startBroadcastWith("DEPLOYER_PRIV_KEY") {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         require(deployerPrivateKey != 0, "PRIVATE_KEY is not set");
 
@@ -26,12 +27,12 @@ contract DeployFeeDistributor is MCScript {
         address emergencyReturn = vm.envAddress("EMERGENCY_RETURN");
         require(emergencyReturn != address(0), "EMERGENCY_RETURN is not set");
 
-        vm.startBroadcast(deployerPrivateKey);
+        // vm.startBroadcast(deployerPrivateKey);
 
         // deploy関数に環境変数から読み込んだ引数を渡す
         deploy(votingEscrow, startTime, token, admin, emergencyReturn);
 
-        vm.stopBroadcast();
+        // vm.stopBroadcast();
     }
 
     function deploy(
@@ -48,19 +49,24 @@ contract DeployFeeDistributor is MCScript {
         );
         FeeDistributor distributor = new FeeDistributor();
 
-
         mc.init("FeeDistributor");
         mc.use(FeeDistributor.initialize.selector, address(distributor));
         mc.use(FeeDistributor.checkpointToken.selector, address(distributor));
         mc.use(FeeDistributor.veForAt.selector, address(distributor));
-        mc.use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
+        mc.use(
+            FeeDistributor.checkpointTotalSupply.selector,
+            address(distributor)
+        );
         mc.use(bytes4(keccak256("claim()")), address(distributor));
         mc.use(bytes4(keccak256("claim(address)")), address(distributor));
         mc.use(FeeDistributor.claimMany.selector, address(distributor));
         mc.use(FeeDistributor.burn.selector, address(distributor));
         mc.use(FeeDistributor.commitAdmin.selector, address(distributor));
         mc.use(FeeDistributor.applyAdmin.selector, address(distributor));
-        mc.use(FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
+        mc.use(
+            FeeDistributor.toggleAllowCheckpointToken.selector,
+            address(distributor)
+        );
         mc.use(FeeDistributor.killMe.selector, address(distributor));
         mc.use(FeeDistributor.recoverBalance.selector, address(distributor));
         mc.use(FeeDistributor.startTime.selector, address(distributor));
@@ -68,7 +74,10 @@ contract DeployFeeDistributor is MCScript {
         mc.use(FeeDistributor.lastTokenTime.selector, address(distributor));
         mc.use(FeeDistributor.totalReceived.selector, address(distributor));
         mc.use(FeeDistributor.tokenLastBalance.selector, address(distributor));
-        mc.use(FeeDistributor.canCheckpointToken.selector, address(distributor));
+        mc.use(
+            FeeDistributor.canCheckpointToken.selector,
+            address(distributor)
+        );
         mc.use(FeeDistributor.isKilled.selector, address(distributor));
         mc.use(FeeDistributor.votingEscrow.selector, address(distributor));
         mc.use(FeeDistributor.token.selector, address(distributor));
