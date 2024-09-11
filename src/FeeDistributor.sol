@@ -59,7 +59,19 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _t = $.lastTokenTime;
         uint256 _sinceLast = block.timestamp - _t;
+        uint256 _currentWeek = block.timestamp / WEEK;
+        uint256 _sinceLastInWeeks = _currentWeek - (_t / WEEK);
+        if (_sinceLastInWeeks > 0) {
+            _t = ((_t + WEEK) / WEEK) * WEEK;
+            _sinceLast = block.timestamp - _t;
+            _sinceLastInWeeks = _currentWeek - _t / WEEK;
+        }
+        if (_sinceLastInWeeks >= 20) {
+            _t = ((block.timestamp - (WEEK * 19)) / WEEK) * WEEK;
+            _sinceLast = block.timestamp - _t;
+        }
         $.lastTokenTime = block.timestamp;
+
         uint256 _thisWeek = (_t / WEEK) * WEEK;
         uint256 _nextWeek;
 
@@ -278,6 +290,13 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(addr_);
         uint256 _startTime = $.startTime;
+        uint256 _thisWeek = (block.timestamp / WEEK) * WEEK;
+        uint256 _lastTokenTime = lastTokenTime_;
+        uint256 _latestFeeUnlockTime = ((lastTokenTime_ + WEEK) / WEEK) * WEEK;
+
+        if (_thisWeek >= _latestFeeUnlockTime) {
+            _lastTokenTime = _latestFeeUnlockTime;
+        }
 
         if (_maxUserEpoch == 0) {
             // No lock = no fees
@@ -308,7 +327,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             _weekCursor = ((_userPoint.ts + WEEK - 1) / WEEK) * WEEK;
         }
 
-        if (_weekCursor >= lastTokenTime_) {
+        if (_weekCursor >= _lastTokenTime) {
             return 0;
         }
 
@@ -321,7 +340,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         // Iterate over weeks
         for (uint256 i; i < 50; ) {
-            if (_weekCursor >= lastTokenTime_) {
+            if (_weekCursor >= _lastTokenTime) {
                 break;
             } else if (
                 _weekCursor >= _userPoint.ts && _userEpoch <= _maxUserEpoch
