@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-import {MCTest} from "@mc/devkit/Flattened.sol";
+import "test/util/TestBase.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorClaimManyTest is MCTest {
+contract FeeDistributorClaimManyTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
@@ -43,8 +42,8 @@ contract FeeDistributorClaimManyTest is MCTest {
         _use(FeeDistributor.checkpointToken.selector, address(distributor));
         _use(FeeDistributor.timeCursor.selector, address(distributor));
         _use(FeeDistributor.veSupply.selector, address(distributor));
-        _use(bytes4(keccak256("claim()")), address(distributor));
-        _use(bytes4(keccak256("claim(address)")), address(distributor));
+        _use(FeeDistributor.claim.selector, address(distributor));
+        _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.lastTokenTime.selector, address(distributor));
         _use(
             FeeDistributor.toggleAllowCheckpointToken.selector,
@@ -122,6 +121,4 @@ contract FeeDistributorClaimManyTest is MCTest {
 
         assertTrue(balanceAfter > balanceBefore);
     }
-
-    receive() external payable {}
 }

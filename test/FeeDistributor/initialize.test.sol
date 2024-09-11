@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {MCTest} from "@mc/devkit/Flattened.sol";
+import "test/util/TestBase.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorInitializeTest is MCTest {
+contract FeeDistributorInitializeTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
@@ -72,5 +72,4 @@ contract FeeDistributorInitializeTest is MCTest {
         distributor.initialize(address(veToken), startTime, address(token), alice, bob);
     }
 
-    receive() external payable {}
 }

@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-import {MCTest} from "@mc/devkit/Flattened.sol";
+import "test/util/TestBase.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorKillFeeDistroTest is MCTest {
+contract FeeDistributorKillFeeDistroTest is TestBase {
     address alice;
     address bob;
     address charlie;
@@ -117,5 +116,4 @@ contract FeeDistributorKillFeeDistroTest is MCTest {
         feeDistributor.claimMany(claimants);
     }
 
-    receive() external payable {}
 }

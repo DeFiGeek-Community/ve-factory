@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-import {MCTest} from "@mc/devkit/Flattened.sol";
+import "test/util/TestBase.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorCheckpointTest is MCTest {
+contract FeeDistributorCheckpointTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant YEAR = DAY * 365;
@@ -47,6 +46,8 @@ contract FeeDistributorCheckpointTest is MCTest {
             FeeDistributor.toggleAllowCheckpointToken.selector,
             address(distributor)
         );
+
+        // vm.warp(block.timestamp + YEAR);
 
         feeDistributor.initialize(
             address(veToken),
@@ -116,6 +117,4 @@ contract FeeDistributorCheckpointTest is MCTest {
         uint256 newLastTokenTime = feeDistributor.lastTokenTime();
         assertTrue(newLastTokenTime > lastTokenTime);
     }
-
-    receive() external payable {}
 }

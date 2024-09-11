@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {MCTest} from "@mc/devkit/Flattened.sol";
+import "test/util/TestBase.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorWithToggleCheckpointTest is MCTest {
+contract FeeDistributorWithToggleCheckpointTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
@@ -228,5 +228,4 @@ contract FeeDistributorWithToggleCheckpointTest is MCTest {
         assertTrue(abs(balanceAlice + balanceBob - 10 ** 19) < 20);
     }
 
-    receive() external payable {}
 }
