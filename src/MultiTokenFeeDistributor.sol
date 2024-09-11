@@ -65,6 +65,32 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _t = $token.lastTokenTime;
         uint256 _sinceLast = block.timestamp - _t;
+        uint256 _currentWeek = block.timestamp / WEEK;
+        uint256 _sinceLastInWeeks = _currentWeek - (_t / WEEK);
+
+        if (_sinceLastInWeeks > 0) {
+            _t = ((_t + WEEK) / WEEK) * WEEK;
+            _sinceLast = block.timestamp - _t;
+            _sinceLastInWeeks = _currentWeek - _t / WEEK;
+        }
+        /*
+        If _sinceLast has exceeded 20 weeks,
+        set _t to the beginning of the week that is 19 weeks prior to the current block time.
+
+        |-x-|-0-|-0-|-0-|-0-|-0-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|-1-|0.5●-|-
+        0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25    26
+        x: Last checkpoint 
+        ●: New checkpoint
+
+        In this case, we start the calculation from (the beginning of) week 6. 
+        No fee will be allocated to the weeks prior to week 5.
+        */
+        if (_sinceLastInWeeks >= 20) {
+            _t = ((block.timestamp - (WEEK * 19)) / WEEK) * WEEK;
+            _sinceLast = block.timestamp - _t;
+        }
+
+
         $token.lastTokenTime = block.timestamp;
         uint256 _thisWeek = (_t / WEEK) * WEEK;
         uint256 _nextWeek;
