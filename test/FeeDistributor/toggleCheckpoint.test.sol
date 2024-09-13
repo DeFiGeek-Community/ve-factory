@@ -160,10 +160,10 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
 
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 1e19);
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(block.timestamp + WEEK * 2 );
         feeDistributor.claimFor(alice);
 
-        assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - 1e19) < 1000);
+        assertTrue(coinA.balanceOf(alice) == 1e19);
     }
 
     function testClaimForMultipleTokenDeposits() public {
@@ -189,7 +189,7 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
 
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 10 ** 19);
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(block.timestamp + WEEK * 2);
         feeDistributor.claimFor(alice);
 
         assertTrue(abs(10 ** 19 - safeToInt256(coinA.balanceOf(alice))) < 1000);

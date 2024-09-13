@@ -124,7 +124,7 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
         uint256 amount = 1000 * 1e18;
         // Aliceにトークンをロックさせる
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 4 * WEEK);
+        veToken.createLock(amount, block.timestamp + 10 * WEEK);
         vm.warp(block.timestamp + WEEK);
 
         // FeeDistributorを初期化し、チェックポイントトークンを許可する
@@ -136,14 +136,14 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18);
 
         // Aliceが1回目の請求を行い、トークンの残高を確認する
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(block.timestamp + WEEK * 2);
         vm.prank(alice);
         feeDistributor.claimFor(alice);
         uint256 balanceAfterFirstClaim = coinA.balanceOf(alice);
         assertEq(balanceAfterFirstClaim, 1e18);
 
         // 2回目のトークン転送とチェックポイント
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(block.timestamp + WEEK * 2);
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 2e18);
         feeDistributor.checkpointToken();
@@ -167,7 +167,7 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
         uint256 amount = 1000 * 1e18;
         // Aliceにトークンをロックさせる
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 4 * WEEK);
+        veToken.createLock(amount, block.timestamp + 10 * WEEK);
         vm.warp(block.timestamp + WEEK);
 
         // FeeDistributorを初期化し、チェックポイントトークンを許可する
@@ -179,7 +179,7 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18);
 
         // Aliceが請求を行い、トークンの残高を確認する
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(block.timestamp + WEEK * 2);
         vm.prank(alice);
         feeDistributor.claimFor(alice);
         uint256 balanceAfterFirstClaim = coinA.balanceOf(alice);
