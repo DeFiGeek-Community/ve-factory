@@ -92,9 +92,11 @@ function theoreticalSupply() public view returns (uint256) {
         uint256 endEpoch = (end - creationTime) / YEAR;
         uint256 exponent = startEpoch * 25;
         uint256 rate = YEAR_1_SUPPLY / YEAR / (2 ** (exponent / 100));
+        uint256 currentTime = block.timestamp;
 
-        for (uint256 i = startEpoch; i < endEpoch; i++) {
-            vm.warp(block.timestamp + YEAR);
+        for (uint256 i = startEpoch; i < endEpoch; ++i) {
+            currentTime += YEAR;
+            vm.warp(currentTime);
             token.updateMiningParameters();
         }
 
