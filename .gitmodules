@@ -13,3 +13,6 @@
 [submodule "lib/mc"]
 	path = lib/mc
 	url = https://github.com/metacontract/mc
+[submodule "lib/ucs-contracts"]
+	path = lib/ucs-contracts
+	url = https://github.com/ecdysisxyz/ucs-contracts
