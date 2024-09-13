@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "test/util/TestBase.sol";
-import "src/FeeDistributor.sol";
+import "src/FeeDistributorBase.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
@@ -17,7 +17,7 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
 
     IFeeDistributor public feeDistributor = IFeeDistributor(target);
 
-    FeeDistributor distributor;
+    FeeDistributorBase distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -37,26 +37,26 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         token.approve(address(veToken), type(uint256).max);
         vm.prank(charlie);
         token.approve(address(veToken), type(uint256).max);
-        distributor = new FeeDistributor();
+        distributor = new FeeDistributorBase();
 
-        _use(FeeDistributor.initialize.selector, address(distributor));
-        _use(FeeDistributor.checkpointToken.selector, address(distributor));
+        _use(FeeDistributorBase.initialize.selector, address(distributor));
+        _use(FeeDistributorBase.checkpointToken.selector, address(distributor));
         _use(
-            FeeDistributor.checkpointTotalSupply.selector,
+            FeeDistributorBase.checkpointTotalSupply.selector,
             address(distributor)
         );
-        _use(FeeDistributor.claim.selector, address(distributor));
-        _use(FeeDistributor.claimFor.selector, address(distributor));
-        _use(FeeDistributor.claimMany.selector, address(distributor));
-        _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
+        _use(FeeDistributorBase.claim.selector, address(distributor));
+        _use(FeeDistributorBase.claimFor.selector, address(distributor));
+        _use(FeeDistributorBase.claimMany.selector, address(distributor));
+        _use(FeeDistributorBase.tokensPerWeek.selector, address(distributor));
         _use(
-            FeeDistributor.toggleAllowCheckpointToken.selector,
+            FeeDistributorBase.toggleAllowCheckpointToken.selector,
             address(distributor)
         );
-        _use(FeeDistributor.startTime.selector, address(distributor));
-        _use(FeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(FeeDistributor.timeCursor.selector, address(distributor));
-        _use(FeeDistributor.canCheckpointToken.selector, address(distributor));
+        _use(FeeDistributorBase.startTime.selector, address(distributor));
+        _use(FeeDistributorBase.lastTokenTime.selector, address(distributor));
+        _use(FeeDistributorBase.timeCursor.selector, address(distributor));
+        _use(FeeDistributorBase.canCheckpointToken.selector, address(distributor));
 
         vm.warp(WEEK * 1000);
     }
