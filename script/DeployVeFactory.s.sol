@@ -19,16 +19,10 @@ contract DeployVeFactory is Script {
     function deploy() internal returns (address) {
         address initialOwner = msg.sender;
         // VeFactoryの初期化関数とその引数をエンコード
-        bytes memory initializerData = abi.encodeCall(
-            VeFactory.initialize,
-            (initialOwner)
-        );
+        bytes memory initializerData = abi.encodeCall(VeFactory.initialize, (initialOwner));
 
         // UUPSプロキシとしてVeFactoryをデプロイ
-        address proxyAddress = Upgrades.deployUUPSProxy(
-            "VeFactory.sol",
-            initializerData
-        );
+        address proxyAddress = Upgrades.deployUUPSProxy("VeFactory.sol", initializerData);
         // console.log("Deployed VeFactory proxy at:", proxyAddress);
         return proxyAddress;
     }
