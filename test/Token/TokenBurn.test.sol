@@ -55,11 +55,7 @@ contract TokenBurnTest is Test {
         assertEq(token.totalSupply(), 0);
     }
 
-    error ERC20InsufficientBalance(
-        address sender,
-        uint256 balance,
-        uint256 needed
-    );
+    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
 
     function testOverBurn() public {
         uint256 initialSupply = token.totalSupply();
@@ -67,12 +63,8 @@ contract TokenBurnTest is Test {
         uint256 currentBalance = token.balanceOf(from);
         uint256 amountRequested = initialSupply + 1;
 
-        bytes memory encodedError = abi.encodeWithSelector(
-            ERC20InsufficientBalance.selector,
-            from,
-            currentBalance,
-            amountRequested
-        );
+        bytes memory encodedError =
+            abi.encodeWithSelector(ERC20InsufficientBalance.selector, from, currentBalance, amountRequested);
         vm.expectRevert(encodedError);
         token.burn(amountRequested);
     }

@@ -14,16 +14,7 @@ contract TokenConstructorTest is Test {
         // Set up the environment and deploy the token contract with predefined parameters
         vm.warp(block.timestamp + 365 days * 10); // Fast-forward time to ensure no interference with time-dependent parameters
         decimals = 14;
-        token = new Token(
-            "Token",
-            "TKN",
-            uint8(decimals),
-            450_000_000,
-            55_000_000,
-            YEAR,
-            10,
-            1 days
-        );
+        token = new Token("Token", "TKN", uint8(decimals), 450_000_000, 55_000_000, YEAR, 10, 1 days);
     }
 
     function testInitialSettings() public view {
@@ -82,23 +73,11 @@ contract TokenConstructorTest is Test {
 
     function testRateReductionTimeEffect() public {
         // Test the effect of rate reduction time on the mining rate
-        Token tokenWithStandardReduction = new Token(
-            "Token",
-            "TKN",
-            14,
-            450_000_000,
-            55_000_000,
-            YEAR,
-            10,
-            1 days
-        );
+        Token tokenWithStandardReduction = new Token("Token", "TKN", 14, 450_000_000, 55_000_000, YEAR, 10, 1 days);
         assertEq(tokenWithStandardReduction.rate(), 0);
         vm.warp(block.timestamp + 2 days); // Advance time to trigger rate reduction
         tokenWithStandardReduction.updateMiningParameters(); // Update mining parameters
-        assertEq(
-            tokenWithStandardReduction.rate(),
-            (55_000_000 * (10 ** decimals)) / YEAR
-        );
+        assertEq(tokenWithStandardReduction.rate(), (55_000_000 * (10 ** decimals)) / YEAR);
     }
 
     function testInflationDelayEffect() public {
@@ -115,10 +94,7 @@ contract TokenConstructorTest is Test {
         );
         assertEq(tokenWithNoDelay.rate(), 0);
         tokenWithNoDelay.updateMiningParameters(); // Immediately update mining parameters
-        assertEq(
-            tokenWithNoDelay.rate(),
-            (55_000_000 * (10 ** decimals)) / YEAR
-        );
+        assertEq(tokenWithNoDelay.rate(), (55_000_000 * (10 ** decimals)) / YEAR);
     }
 
     function testRateReductionCoefficientEffect() public {
@@ -138,19 +114,13 @@ contract TokenConstructorTest is Test {
             0
         );
         tokenWithHighCoefficient.updateMiningParameters(); // Initialize mining parameters
-        assertEq(
-            tokenWithHighCoefficient.rate(),
-            initialRate
-        );
+        assertEq(tokenWithHighCoefficient.rate(), initialRate);
 
         // Simulate passing of one rate reduction period
         vm.warp(block.timestamp + YEAR);
         tokenWithHighCoefficient.updateMiningParameters();
         // Expected rate after one YEAR with a 10% reduction
-        assertEq(
-            tokenWithHighCoefficient.rate(),
-            (initialRate * denominator) / 1_111_111_111_111_111_111
-        );
+        assertEq(tokenWithHighCoefficient.rate(), (initialRate * denominator) / 1_111_111_111_111_111_111);
 
         // Low coefficient should result in a faster rate reduction
         Token tokenWithLowCoefficient = new Token(
@@ -170,9 +140,6 @@ contract TokenConstructorTest is Test {
         tokenWithLowCoefficient.updateMiningParameters();
         // Expected rate after one YEAR with a 50% reduction
         uint256 expectedLowCoefficientRate = initialRate / 2;
-        assertEq(
-            tokenWithLowCoefficient.rate(),
-            expectedLowCoefficientRate
-        );
+        assertEq(tokenWithLowCoefficient.rate(), expectedLowCoefficientRate);
     }
 }

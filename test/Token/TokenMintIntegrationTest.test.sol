@@ -14,16 +14,7 @@ contract TokenMintIntegrationTest is Test {
         minter = address(this);
         recipient = address(0x1); // recipientを設定
         vm.warp(block.timestamp + 365 days * 10);
-        token = new Token(
-            "Token",
-            "TKN",
-            18,
-            1e24,
-            55_000_000,
-            365 days,
-            10,
-            0
-        );
+        token = new Token("Token", "TKN", 18, 1e24, 55_000_000, 365 days, 10, 0);
         token.setMinter(minter);
         token.updateMiningParameters();
     }

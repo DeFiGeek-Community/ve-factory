@@ -20,7 +20,7 @@ contract TokenInflationDelayTest is Test {
             10,
             1 days
         );
-            }
+    }
 
     function testRate() public {
         assertEq(token.rate(), 0);

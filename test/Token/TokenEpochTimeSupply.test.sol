@@ -12,22 +12,13 @@ contract TokenEpochTimeSupplyTest is Test {
     function setUp() public {
         // deployContractsのロジックをここに移植するか、または直接Tokenをデプロイします
         vm.warp(block.timestamp + 365 days * 10); // Fast-forward time to ensure no interference with time-dependent parameters
-        token = new Token(
-            "Token",
-            "TKN",
-            18,
-            450_000_000,
-            55_000_000,
-            YEAR,
-            10,
-            1 days
-        );
+        token = new Token("Token", "TKN", 18, 450_000_000, 55_000_000, YEAR, 10, 1 days);
     }
 
     function testStartEpochTimeWrite() public {
         uint256 creationTime = token.startEpochTime();
         vm.warp(block.timestamp + YEAR);
-        
+
         assertEq(token.startEpochTime(), creationTime);
 
         token.startEpochTimeWrite();
