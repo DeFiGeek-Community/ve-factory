@@ -49,21 +49,15 @@ contract Token is ERC20Permit {
         uint256 rateReductionCoefficient_,
         uint256 inflationDelay_
     ) ERC20Permit(name) ERC20(name, symbol) {
-        require(
-            decimals_ >= 4 && decimals_ <= 18,
-            "decimals must be between 4 and 18"
-        );
+        require(decimals_ >= 4 && decimals_ <= 18, "decimals must be between 4 and 18");
         _decimals = decimals_;
         uint256 _initialSupply = initialSupply_ * (10 ** uint256(decimals_));
         _mint(msg.sender, _initialSupply);
         admin = msg.sender;
 
-        initialRate =
-            (initialRate_ * (10 ** uint256(decimals_))) /
-            rateReductionTime_;
+        initialRate = (initialRate_ * (10 ** uint256(decimals_))) / rateReductionTime_;
         rateReductionTime = rateReductionTime_;
-        rateReductionCoefficient = ((100 * (10 ** uint256(decimals_))) /
-            (100 - rateReductionCoefficient_));
+        rateReductionCoefficient = ((100 * (10 ** uint256(decimals_))) / (100 - rateReductionCoefficient_));
         rateDenominator = 10 ** uint256(decimals_);
         inflationDelay = inflationDelay_;
 
@@ -108,10 +102,7 @@ contract Token is ERC20Permit {
      *      Total supply becomes slightly larger if(this function is called late
      */
     function updateMiningParameters() external {
-        require(
-            block.timestamp >= startEpochTime + rateReductionTime,
-            "dev: too soon!"
-        ); // dev: too soon!
+        require(block.timestamp >= startEpochTime + rateReductionTime, "dev: too soon!"); // dev: too soon!
         _updateMiningParameters();
     }
 
@@ -160,10 +151,7 @@ contract Token is ERC20Permit {
      * @param end End of the time interval (timestamp)
      * @return Tokens mintable from `start` till `end`
      */
-    function mintableInTimeframe(
-        uint256 start,
-        uint256 end
-    ) external view returns (uint256) {
+    function mintableInTimeframe(uint256 start, uint256 end) external view returns (uint256) {
         require(start <= end, "dev: start > end"); // dev: start > end
         uint256 to_mint;
         uint256 currentEpochTime = startEpochTime;
@@ -172,18 +160,13 @@ contract Token is ERC20Permit {
         // Special case if(end is in future (not yet minted) epoch
         if (end > currentEpochTime + rateReductionTime) {
             currentEpochTime += rateReductionTime;
-            currentRate =
-                (currentRate * rateDenominator) /
-                rateReductionCoefficient;
+            currentRate = (currentRate * rateDenominator) / rateReductionCoefficient;
         }
 
-        require(
-            end <= currentEpochTime + rateReductionTime,
-            "dev: too far in future"
-        ); // dev: too far in future
+        require(end <= currentEpochTime + rateReductionTime, "dev: too far in future"); // dev: too far in future
 
         // Curve will not work in 1000 years. Darn!
-        for (uint i; i < 999; ) {
+        for (uint256 i; i < 999;) {
             if (end >= currentEpochTime) {
                 uint256 currentEnd = end;
                 if (currentEnd > currentEpochTime + rateReductionTime) {
@@ -203,9 +186,7 @@ contract Token is ERC20Permit {
             }
 
             currentEpochTime -= rateReductionTime;
-            currentRate =
-                (currentRate * rateReductionCoefficient) /
-                rateDenominator; // double-division with rounding made rate a bit less => good
+            currentRate = (currentRate * rateReductionCoefficient) / rateDenominator; // double-division with rounding made rate a bit less => good
             require(currentRate <= initialRate, "This should never happen"); // This should never happen
 
             unchecked {
@@ -222,10 +203,7 @@ contract Token is ERC20Permit {
      * @param _tokenMinter Address of the tokenMinter
      */
     function setMinter(address _tokenMinter) external onlyAdmin {
-        require(
-            _tokenMinter != address(0),
-            "dev: can set the tokenMinter only once, at creation"
-        ); // dev: can set the tokenMinter only once, at creation
+        require(_tokenMinter != address(0), "dev: can set the tokenMinter only once, at creation"); // dev: can set the tokenMinter only once, at creation
         tokenMinter = _tokenMinter;
         emit SetMinter(_tokenMinter);
     }
@@ -254,10 +232,7 @@ contract Token is ERC20Permit {
         if (block.timestamp >= startEpochTime + rateReductionTime) {
             _updateMiningParameters();
         }
-        require(
-            totalSupply() + _value <= _availableSupply(),
-            "dev: exceeds allowable mint amount"
-        );
+        require(totalSupply() + _value <= _availableSupply(), "dev: exceeds allowable mint amount");
 
         _mint(_to, _value);
 
