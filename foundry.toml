@@ -7,12 +7,12 @@ ast = true
 build_info = true
 viaIR = true
 extra_output = ["storageLayout"]
-fs_permissions = [{ access = "read", path = "./out/"}, { access = "read", path = "./mc.toml" }, { access = "read", path = "./lib/mc/mc.toml" }]
+fs_permissions = [{ access = "read", path = "./out/"}, { access = "read-write", path = "./deployments/" }]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
 remappings = [
   '@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/',
   '@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/',
-  '@mc/=lib/mc/'
+  '@ucs/=lib/ucs-contracts/src/'
 ]
