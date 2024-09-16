@@ -17,16 +17,10 @@ interface IVeFactory {
     /// @param _name Name of the veToken.
     /// @param _symbol Symbol of the veToken.
     /// @return Address of the newly created veToken.
-    function createVeToken(
-        address _tokenAddr,
-        string memory _name,
-        string memory _symbol
-    ) external returns (address);
+    function createVeToken(address _tokenAddr, string memory _name, string memory _symbol) external returns (address);
 
     /// @notice Retrieves deployed veToken information.
     /// @param tokenAddr Address of the Token.
     /// @return VeTokenInfo structure containing veToken details.
-    function getDeployedVeTokens(
-        address tokenAddr
-    ) external view returns (VeTokenInfo memory);
+    function getDeployedVeTokens(address tokenAddr) external view returns (VeTokenInfo memory);
 }

@@ -8,23 +8,15 @@ import "src/Storage/FeeDistributorSchema.sol";
 interface IVeToken {
     function getLastUserSlope(address addr_) external view returns (int128);
 
-    function userPointHistoryTs(
-        address addr_,
-        uint256 idx_
-    ) external view returns (uint256);
+    function userPointHistoryTs(address addr_, uint256 idx_) external view returns (uint256);
 
     function userPointEpoch(address addr) external view returns (uint256);
 
     function epoch() external view returns (uint256);
 
-    function userPointHistory(
-        address addr,
-        uint256 loc
-    ) external view returns (FeeDistributorSchema.Point memory);
+    function userPointHistory(address addr, uint256 loc) external view returns (FeeDistributorSchema.Point memory);
 
-    function pointHistory(
-        uint256 loc
-    ) external view returns (FeeDistributorSchema.Point memory);
+    function pointHistory(uint256 loc) external view returns (FeeDistributorSchema.Point memory);
 
     function lockedEnd(address addr_) external view returns (uint256);
 
@@ -40,17 +32,11 @@ interface IVeToken {
 
     function withdraw() external;
 
-    function balanceOf(
-        address addr_,
-        uint256 t_
-    ) external view returns (uint256);
+    function balanceOf(address addr_, uint256 t_) external view returns (uint256);
 
     function balanceOf(address addr_) external view returns (uint256);
 
-    function balanceOfAt(
-        address addr_,
-        uint256 block_
-    ) external view returns (uint256);
+    function balanceOfAt(address addr_, uint256 block_) external view returns (uint256);
 
     function totalSupply(uint256 t_) external view returns (uint256);
 
