@@ -3,7 +3,13 @@ pragma solidity ^0.8.24;
 
 contract FeeDistributorFacade {
     // Functions
-    function initialize(address votingEscrow_, uint256 startTime_, address token_, address admin_, address emergencyReturn_) external {}
+    function initialize(
+        address votingEscrow_,
+        uint256 startTime_,
+        address token_,
+        address admin_,
+        address emergencyReturn_
+    ) external {}
 
     function checkpointToken() external {}
 
