@@ -41,18 +41,12 @@ contract FeeDistributorBaseClaimFunctionalityTest is TestBase {
 
         _use(FeeDistributorBase.initialize.selector, address(distributor));
         _use(FeeDistributorBase.checkpointToken.selector, address(distributor));
-        _use(
-            FeeDistributorBase.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(FeeDistributorBase.checkpointTotalSupply.selector, address(distributor));
         _use(FeeDistributorBase.claim.selector, address(distributor));
         _use(FeeDistributorBase.claimFor.selector, address(distributor));
         _use(FeeDistributorBase.claimMany.selector, address(distributor));
         _use(FeeDistributorBase.tokensPerWeek.selector, address(distributor));
-        _use(
-            FeeDistributorBase.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(FeeDistributorBase.toggleAllowCheckpointToken.selector, address(distributor));
         _use(FeeDistributorBase.startTime.selector, address(distributor));
         _use(FeeDistributorBase.lastTokenTime.selector, address(distributor));
         _use(FeeDistributorBase.timeCursor.selector, address(distributor));
@@ -73,17 +67,11 @@ contract FeeDistributorBaseClaimFunctionalityTest is TestBase {
     }
 
     function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.initialize(
-            address(veToken),
-            time,
-            address(coinA),
-            address(this),
-            bob
-        );
+        feeDistributor.initialize(address(veToken), time, address(coinA), address(this), bob);
     }
 
-     // このテストでは、チェックポイントトークンの許可後に請求が正しく行われるかを確認します。
-     // 特に、Aliceがトークンをロックし、チェックポイント後に請求を行うシナリオをテストします。
+    // このテストでは、チェックポイントトークンの許可後に請求が正しく行われるかを確認します。
+    // 特に、Aliceがトークンをロックし、チェックポイント後に請求を行うシナリオをテストします。
     function testClaimWithCheckpointAfterToggle() public {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
@@ -245,5 +233,4 @@ contract FeeDistributorBaseClaimFunctionalityTest is TestBase {
             assertTrue(abs(safeToInt256(claimedAmount) - 1e18) < 20);
         }
     }
-
 }

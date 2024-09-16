@@ -38,13 +38,7 @@ contract FeeDistributorBaseKillFeeDistroTest is TestBase {
         _use(FeeDistributorBase.claimMany.selector, address(distributor));
         _use(FeeDistributorBase.emergencyReturn.selector, address(distributor));
 
-        feeDistributor.initialize(
-            address(veToken),
-            block.timestamp,
-            address(coinA),
-            alice,
-            bob
-        );
+        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
     }
 
     function testAssumptions() public view {
@@ -106,7 +100,7 @@ contract FeeDistributorBaseKillFeeDistroTest is TestBase {
 
     function testCannotClaimManyAfterKilled() public {
         address[] memory claimants = new address[](20);
-        for (uint i = 0; i < 20; i++) {
+        for (uint256 i = 0; i < 20; i++) {
             claimants[i] = alice;
         }
         vm.prank(alice);
@@ -115,5 +109,4 @@ contract FeeDistributorBaseKillFeeDistroTest is TestBase {
         vm.prank(bob);
         feeDistributor.claimMany(claimants);
     }
-
 }

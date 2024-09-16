@@ -33,29 +33,17 @@ contract FeeDistributorBaseCheckpointTest is TestBase {
         distributor = new FeeDistributorBase();
 
         _use(FeeDistributorBase.initialize.selector, address(distributor));
-        _use(
-            FeeDistributorBase.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(FeeDistributorBase.checkpointTotalSupply.selector, address(distributor));
         _use(FeeDistributorBase.timeCursor.selector, address(distributor));
         _use(FeeDistributorBase.veSupply.selector, address(distributor));
         _use(FeeDistributorBase.claim.selector, address(distributor));
         _use(FeeDistributorBase.claimFor.selector, address(distributor));
         _use(FeeDistributorBase.lastTokenTime.selector, address(distributor));
-        _use(
-            FeeDistributorBase.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(FeeDistributorBase.toggleAllowCheckpointToken.selector, address(distributor));
 
         // vm.warp(block.timestamp + YEAR);
 
-        feeDistributor.initialize(
-            address(veToken),
-            block.timestamp,
-            address(coinA),
-            alice,
-            bob
-        );
+        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
 
         token.transfer(alice, 1e24);
         vm.startPrank(alice);

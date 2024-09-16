@@ -42,13 +42,7 @@ contract FeeDistributorBaseInitializeTest is TestBase {
     function testInitialize() public {
         vm.prank(alice);
         uint256 startTime = block.timestamp;
-        feeDistributor.initialize(
-            address(veToken),
-            startTime,
-            address(coinA),
-            alice,
-            bob
-        );
+        feeDistributor.initialize(address(veToken), startTime, address(coinA), alice, bob);
 
         uint256 time = (startTime / WEEK) * WEEK;
 
@@ -71,5 +65,4 @@ contract FeeDistributorBaseInitializeTest is TestBase {
         vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
         distributor.initialize(address(veToken), startTime, address(token), alice, bob);
     }
-
 }
