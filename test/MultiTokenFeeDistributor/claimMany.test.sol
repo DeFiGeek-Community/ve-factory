@@ -35,10 +35,7 @@ contract MultiTokenFeeDistributorClaimManyTest is TestBase {
 
         _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
         _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(
-            MultiTokenFeeDistributor.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
         _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
         _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
@@ -46,22 +43,12 @@ contract MultiTokenFeeDistributorClaimManyTest is TestBase {
         _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
         _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(
-            MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
 
-        feeDistributor.initialize(
-            address(veToken),
-            alice,
-            bob
-        );
+        feeDistributor.initialize(address(veToken), alice, bob);
 
         vm.prank(alice);
-        feeDistributor.addToken(
-            address(coinA),
-            block.timestamp
-        );
+        feeDistributor.addToken(address(coinA), block.timestamp);
 
         token.transfer(alice, amount);
         token.transfer(bob, amount);
@@ -126,5 +113,4 @@ contract MultiTokenFeeDistributorClaimManyTest is TestBase {
 
         assertTrue(balanceAfter > balanceBefore);
     }
-
 }

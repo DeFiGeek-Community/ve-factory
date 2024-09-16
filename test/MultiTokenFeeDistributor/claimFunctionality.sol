@@ -42,28 +42,18 @@ contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
         _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
         _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
         _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
-        _use(
-            MultiTokenFeeDistributor.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
         _use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
-        _use(
-            MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
         _use(MultiTokenFeeDistributor.startTime.selector, address(distributor));
         _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
         _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
         _use(MultiTokenFeeDistributor.canCheckpointToken.selector, address(distributor));
 
-        feeDistributor.initialize(
-            address(veToken),
-            address(this),
-            bob
-        );
+        feeDistributor.initialize(address(veToken), address(this), bob);
         vm.warp(WEEK * 1000);
     }
 
@@ -79,10 +69,7 @@ contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
     }
 
     function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.addToken(
-            address(coinA),
-            time
-        );
+        feeDistributor.addToken(address(coinA), time);
     }
 
     function testClaimWithCheckpointAfterToggle() public {
@@ -239,5 +226,4 @@ contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
             assertTrue(abs(safeToInt256(claimedAmount) - 1e18) < 20);
         }
     }
-
 }
