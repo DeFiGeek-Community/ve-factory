@@ -54,8 +54,7 @@ contract TokenDistribution {
 
         initialRate = (initialRate_ * (10 ** _decimals)) / rateReductionTime_;
         rateReductionTime = rateReductionTime_;
-        rateReductionCoefficient = ((100 * (10 ** _decimals)) /
-            (100 - rateReductionCoefficient_));
+        rateReductionCoefficient = ((100 * (10 ** _decimals)) / (100 - rateReductionCoefficient_));
         rateDenominator = 10 ** _decimals;
         inflationDelay = inflationDelay_;
 
@@ -65,11 +64,7 @@ contract TokenDistribution {
         // rate = 0;
         // startEpochSupply = 0;
         totalMintAmount = totalMintAmount_;
-        IERC20(tokenAddr).transferFrom(
-            msg.sender,
-            address(this),
-            totalMintAmount_
-        );
+        IERC20(tokenAddr).transferFrom(msg.sender, address(this), totalMintAmount_);
     }
 
     /**
@@ -102,10 +97,7 @@ contract TokenDistribution {
      *      Total supply becomes slightly larger if(this function is called late
      */
     function updateMiningParameters() external {
-        require(
-            block.timestamp >= startEpochTime + rateReductionTime,
-            "dev: too soon!"
-        ); // dev: too soon!
+        require(block.timestamp >= startEpochTime + rateReductionTime, "dev: too soon!"); // dev: too soon!
         _updateMiningParameters();
     }
 
@@ -154,10 +146,7 @@ contract TokenDistribution {
      * @param end End of the time interval (timestamp)
      * @return Tokens mintable from `start` till `end`
      */
-    function mintableInTimeframe(
-        uint256 start,
-        uint256 end
-    ) external view returns (uint256) {
+    function mintableInTimeframe(uint256 start, uint256 end) external view returns (uint256) {
         require(start <= end, "dev: start > end"); // dev: start > end
         uint256 to_mint;
         uint256 currentEpochTime = startEpochTime;
@@ -166,18 +155,13 @@ contract TokenDistribution {
         // Special case if(end is in future (not yet minted) epoch
         if (end > currentEpochTime + rateReductionTime) {
             currentEpochTime += rateReductionTime;
-            currentRate =
-                (currentRate * rateDenominator) /
-                rateReductionCoefficient;
+            currentRate = (currentRate * rateDenominator) / rateReductionCoefficient;
         }
 
-        require(
-            end <= currentEpochTime + rateReductionTime,
-            "dev: too far in future"
-        ); // dev: too far in future
+        require(end <= currentEpochTime + rateReductionTime, "dev: too far in future"); // dev: too far in future
 
         // Curve will not work in 1000 years. Darn!
-        for (uint i; i < 999; ) {
+        for (uint256 i; i < 999;) {
             if (end >= currentEpochTime) {
                 uint256 currentEnd = end;
                 if (currentEnd > currentEpochTime + rateReductionTime) {
@@ -197,9 +181,7 @@ contract TokenDistribution {
             }
 
             currentEpochTime -= rateReductionTime;
-            currentRate =
-                (currentRate * rateReductionCoefficient) /
-                rateDenominator; // double-division with rounding made rate a bit less => good
+            currentRate = (currentRate * rateReductionCoefficient) / rateDenominator; // double-division with rounding made rate a bit less => good
             require(currentRate <= initialRate, "This should never happen"); // This should never happen
 
             unchecked {
@@ -216,10 +198,7 @@ contract TokenDistribution {
      * @param _tokenMinter Address of the tokenMinter
      */
     function setMinter(address _tokenMinter) external onlyAdmin {
-        require(
-            _tokenMinter != address(0),
-            "dev: can set the tokenMinter only once, at creation"
-        ); // dev: can set the tokenMinter only once, at creation
+        require(_tokenMinter != address(0), "dev: can set the tokenMinter only once, at creation"); // dev: can set the tokenMinter only once, at creation
         tokenMinter = _tokenMinter;
         emit SetMinter(_tokenMinter);
     }
@@ -249,8 +228,7 @@ contract TokenDistribution {
             _updateMiningParameters();
         }
         require(
-            IERC20(tokenAddr).balanceOf(address(this)) + _value <=
-                _availableSupply(),
+            IERC20(tokenAddr).balanceOf(address(this)) + _value <= _availableSupply(),
             "dev: exceeds allowable mint amount"
         );
 
