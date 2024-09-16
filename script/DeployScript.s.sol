@@ -8,6 +8,8 @@ import {UcsDeployLibrary} from "./UcsDeployLibrary.sol";
 import {DeployBase} from "./DeployBase.sol";
 
 contract DeployFeeDistributor is DeployBase {
+    using UcsDeployLibrary for address;
+
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         require(deployerPrivateKey != 0, "PRIVATE_KEY is not set");
@@ -46,41 +48,41 @@ contract DeployFeeDistributor is DeployBase {
         writeDeployedAddress(address(distributor), "FeeDistributor_Impl");
 
         // UcsDeployLibraryを使用してデプロイ
-        address dictionary = UcsDeployLibrary.deployDictionary(admin);
+        address dictionary = admin.deployDictionary();
         writeDeployedAddress(dictionary, "FeeDistributor_Dictionary");
 
-        UcsDeployLibrary.use(dictionary, FeeDistributor.initialize.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.checkpointToken.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.veForAt.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.checkpointTotalSupply.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, bytes4(keccak256("claim()")), address(distributor));
-        UcsDeployLibrary.use(dictionary, bytes4(keccak256("claim(address)")), address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.claimMany.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.burn.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.commitAdmin.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.applyAdmin.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.killMe.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.recoverBalance.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.startTime.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.timeCursor.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.lastTokenTime.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.totalReceived.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.tokenLastBalance.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.canCheckpointToken.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.isKilled.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.votingEscrow.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.token.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.admin.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.futureAdmin.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.emergencyReturn.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.timeCursorOf.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.userEpochOf.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.tokensPerWeek.selector, address(distributor));
-        UcsDeployLibrary.use(dictionary, FeeDistributor.veSupply.selector, address(distributor));
-        UcsDeployLibrary.useFacade(dictionary, address(new FeeDistributorFacade()));
+        dictionary.use(FeeDistributor.initialize.selector, address(distributor));
+        dictionary.use(FeeDistributor.checkpointToken.selector, address(distributor));
+        dictionary.use(FeeDistributor.veForAt.selector, address(distributor));
+        dictionary.use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
+        dictionary.use(bytes4(keccak256("claim()")), address(distributor));
+        dictionary.use(bytes4(keccak256("claim(address)")), address(distributor));
+        dictionary.use(FeeDistributor.claimMany.selector, address(distributor));
+        dictionary.use(FeeDistributor.burn.selector, address(distributor));
+        dictionary.use(FeeDistributor.commitAdmin.selector, address(distributor));
+        dictionary.use(FeeDistributor.applyAdmin.selector, address(distributor));
+        dictionary.use(FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
+        dictionary.use(FeeDistributor.killMe.selector, address(distributor));
+        dictionary.use(FeeDistributor.recoverBalance.selector, address(distributor));
+        dictionary.use(FeeDistributor.startTime.selector, address(distributor));
+        dictionary.use(FeeDistributor.timeCursor.selector, address(distributor));
+        dictionary.use(FeeDistributor.lastTokenTime.selector, address(distributor));
+        dictionary.use(FeeDistributor.totalReceived.selector, address(distributor));
+        dictionary.use(FeeDistributor.tokenLastBalance.selector, address(distributor));
+        dictionary.use(FeeDistributor.canCheckpointToken.selector, address(distributor));
+        dictionary.use(FeeDistributor.isKilled.selector, address(distributor));
+        dictionary.use(FeeDistributor.votingEscrow.selector, address(distributor));
+        dictionary.use(FeeDistributor.token.selector, address(distributor));
+        dictionary.use(FeeDistributor.admin.selector, address(distributor));
+        dictionary.use(FeeDistributor.futureAdmin.selector, address(distributor));
+        dictionary.use(FeeDistributor.emergencyReturn.selector, address(distributor));
+        dictionary.use(FeeDistributor.timeCursorOf.selector, address(distributor));
+        dictionary.use(FeeDistributor.userEpochOf.selector, address(distributor));
+        dictionary.use(FeeDistributor.tokensPerWeek.selector, address(distributor));
+        dictionary.use(FeeDistributor.veSupply.selector, address(distributor));
+        dictionary.useFacade(address(new FeeDistributorFacade()));
 
-        address proxyAddress = UcsDeployLibrary.deployProxy(dictionary, initializerData);
+        address proxyAddress = dictionary.deployProxy(initializerData);
         writeDeployedAddress(address(distributor), "FeeDistributor_Proxy");
 
         console.log("Deployed VeFactory proxy at:", proxyAddress);
