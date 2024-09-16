@@ -34,10 +34,7 @@ contract FeeDistributorClaimManyTest is TestBase {
         distributor = new FeeDistributor();
 
         _use(FeeDistributor.initialize.selector, address(distributor));
-        _use(
-            FeeDistributor.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.checkpointToken.selector, address(distributor));
         _use(FeeDistributor.timeCursor.selector, address(distributor));
@@ -45,18 +42,9 @@ contract FeeDistributorClaimManyTest is TestBase {
         _use(FeeDistributor.claim.selector, address(distributor));
         _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(
-            FeeDistributor.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
 
-        feeDistributor.initialize(
-            address(veToken),
-            block.timestamp,
-            address(coinA),
-            alice,
-            bob
-        );
+        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
 
         token.transfer(alice, amount);
         token.transfer(bob, amount);

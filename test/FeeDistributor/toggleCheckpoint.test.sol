@@ -41,18 +41,12 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
 
         _use(FeeDistributor.initialize.selector, address(distributor));
         _use(FeeDistributor.checkpointToken.selector, address(distributor));
-        _use(
-            FeeDistributor.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(FeeDistributor.claim.selector, address(distributor));
         _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
-        _use(
-            FeeDistributor.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
         _use(FeeDistributor.startTime.selector, address(distributor));
         _use(FeeDistributor.lastTokenTime.selector, address(distributor));
         _use(FeeDistributor.timeCursor.selector, address(distributor));
@@ -73,13 +67,7 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
     }
 
     function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.initialize(
-            address(veToken),
-            time,
-            address(coinA),
-            address(this),
-            bob
-        );
+        feeDistributor.initialize(address(veToken), time, address(coinA), address(this), bob);
     }
 
     function testClaimAfterTokenDeposit() public {
@@ -138,11 +126,7 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         feeDistributor.claimFor(alice);
         coinA.balanceOf(address(this));
 
-        assertTrue(
-            abs(
-                safeToInt256(coinA.balanceOf(alice)) - safeToInt256(21 * 1e18)
-            ) < 1000
-        );
+        assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - safeToInt256(21 * 1e18)) < 1000);
     }
 
     function testClaimBeforeTokenDeposit() public {
@@ -160,7 +144,7 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
 
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 1e19);
-        vm.warp(block.timestamp + WEEK * 2 );
+        vm.warp(block.timestamp + WEEK * 2);
         feeDistributor.claimFor(alice);
 
         assertTrue(coinA.balanceOf(alice) == 1e19);
@@ -227,5 +211,4 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         assertEq(balanceAlice, balanceBob);
         assertTrue(abs(balanceAlice + balanceBob - 10 ** 19) < 20);
     }
-
 }

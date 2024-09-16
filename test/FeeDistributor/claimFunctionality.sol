@@ -41,18 +41,12 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
 
         _use(FeeDistributor.initialize.selector, address(distributor));
         _use(FeeDistributor.checkpointToken.selector, address(distributor));
-        _use(
-            FeeDistributor.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(FeeDistributor.claim.selector, address(distributor));
         _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
         _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
-        _use(
-            FeeDistributor.toggleAllowCheckpointToken.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
         _use(FeeDistributor.startTime.selector, address(distributor));
         _use(FeeDistributor.lastTokenTime.selector, address(distributor));
         _use(FeeDistributor.timeCursor.selector, address(distributor));
@@ -73,17 +67,11 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
     }
 
     function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.initialize(
-            address(veToken),
-            time,
-            address(coinA),
-            address(this),
-            bob
-        );
+        feeDistributor.initialize(address(veToken), time, address(coinA), address(this), bob);
     }
 
-     // このテストでは、チェックポイントトークンの許可後に請求が正しく行われるかを確認します。
-     // 特に、Aliceがトークンをロックし、チェックポイント後に請求を行うシナリオをテストします。
+    // このテストでは、チェックポイントトークンの許可後に請求が正しく行われるかを確認します。
+    // 特に、Aliceがトークンをロックし、チェックポイント後に請求を行うシナリオをテストします。
     function testClaimWithCheckpointAfterToggle() public {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
@@ -245,5 +233,4 @@ contract FeeDistributorClaimFunctionalityTest is TestBase {
             assertTrue(abs(safeToInt256(claimedAmount) - 1e18) < 20);
         }
     }
-
 }

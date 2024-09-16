@@ -41,10 +41,7 @@ contract FeeDistributorFeeDistributionTest is TestBase {
 
         _use(FeeDistributor.initialize.selector, address(distributor));
         _use(FeeDistributor.checkpointToken.selector, address(distributor));
-        _use(
-            FeeDistributor.checkpointTotalSupply.selector,
-            address(distributor)
-        );
+        _use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(FeeDistributor.claim.selector, address(distributor));
         _use(FeeDistributor.claimFor.selector, address(distributor));
         _use(FeeDistributor.claimMany.selector, address(distributor));
@@ -63,13 +60,7 @@ contract FeeDistributorFeeDistributionTest is TestBase {
     }
 
     function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.initialize(
-            address(veToken),
-            time,
-            address(coinA),
-            address(this),
-            bob
-        );
+        feeDistributor.initialize(address(veToken), time, address(coinA), address(this), bob);
     }
 
     function testDepositedAfter() public {
@@ -137,11 +128,7 @@ contract FeeDistributorFeeDistributionTest is TestBase {
         vm.prank(alice);
         feeDistributor.claimFor(alice);
 
-        assertTrue(
-            abs(
-                safeToInt256(coinA.balanceOf(alice)) - safeToInt256(21 * 1e18)
-            ) < 10
-        );
+        assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - safeToInt256(21 * 1e18)) < 10);
     }
 
     function testDepositedBefore() public {
@@ -195,13 +182,7 @@ contract FeeDistributorFeeDistributionTest is TestBase {
         feeDistributor.claimFor(alice);
 
         uint256 tokensToExclude = feeDistributor.tokensPerWeek(excludeTime);
-        assertTrue(
-            abs(
-                10 ** 19 -
-                    safeToInt256(coinA.balanceOf(alice)) -
-                    safeToInt256(tokensToExclude)
-            ) < 10
-        );
+        assertTrue(abs(10 ** 19 - safeToInt256(coinA.balanceOf(alice)) - safeToInt256(tokensToExclude)) < 10);
     }
 
     function testDepositedParallel() public {
@@ -235,5 +216,4 @@ contract FeeDistributorFeeDistributionTest is TestBase {
         assertEq(balanceAlice, balanceBob);
         assertTrue(abs(balanceAlice + balanceBob - 10 ** 19) < 20);
     }
-
 }
