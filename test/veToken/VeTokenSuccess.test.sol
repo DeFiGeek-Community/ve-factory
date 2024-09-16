@@ -9,26 +9,20 @@ contract VeTokenTest is Test {
     VeToken public veTokenContract;
     SampleToken public token;
 
-    function calculateExpectedVotingPower(
-        uint256 lockAmount,
-        uint256 unlockTime
-    ) internal view returns (uint256) {
+    function calculateExpectedVotingPower(uint256 lockAmount, uint256 unlockTime) internal view returns (uint256) {
         uint256 unlockTimeRounded = (unlockTime / 1 weeks) * 1 weeks; // 週単位で丸める
         uint256 lockDuration = unlockTimeRounded - block.timestamp;
         uint256 maxLockDuration = 4 * 365 days; // 仮定: 最大ロック期間は4年
 
-        uint256 expectedVotingPower = (lockAmount * lockDuration) /
-            maxLockDuration;
+        uint256 expectedVotingPower = (lockAmount * lockDuration) / maxLockDuration;
 
         return expectedVotingPower;
     }
 
-    function assertApproxEqual(
-        uint256 actual,
-        uint256 expected,
-        uint256 tolerance,
-        string memory message
-    ) internal pure {
+    function assertApproxEqual(uint256 actual, uint256 expected, uint256 tolerance, string memory message)
+        internal
+        pure
+    {
         if (actual > expected) {
             require(actual - expected <= tolerance, message);
         } else {
@@ -48,11 +42,7 @@ contract VeTokenTest is Test {
         uint256 unlockTime = block.timestamp + 4 weeks; // 4週間後に設定
         uint256 unlockTimeRounded = (unlockTime / 1 weeks) * 1 weeks; // 週単位で丸める
         veTokenContract.createLock(lockAmount, unlockTime);
-        assertEq(
-            veTokenContract.lockedEnd(address(this)),
-            unlockTimeRounded,
-            "Unlock time mismatch"
-        );
+        assertEq(veTokenContract.lockedEnd(address(this)), unlockTimeRounded, "Unlock time mismatch");
     }
 
     function testVotingPower() public {
@@ -60,10 +50,7 @@ contract VeTokenTest is Test {
         uint256 unlockTime = block.timestamp + 4 weeks; // 4週間後に設定
         veTokenContract.createLock(lockAmount, unlockTime);
 
-        uint256 expectedVotingPower = calculateExpectedVotingPower(
-            lockAmount,
-            unlockTime
-        );
+        uint256 expectedVotingPower = calculateExpectedVotingPower(lockAmount, unlockTime);
         uint256 actualVotingPower = veTokenContract.balanceOf(address(this));
 
         assertApproxEqual(
@@ -81,11 +68,7 @@ contract VeTokenTest is Test {
         uint256 newUnlockTime = unlockTime + 4 weeks;
         uint256 unlockTimeRounded = (newUnlockTime / 1 weeks) * 1 weeks; // 週単位で丸める
         veTokenContract.increaseUnlockTime(newUnlockTime);
-        assertEq(
-            veTokenContract.lockedEnd(address(this)),
-            unlockTimeRounded,
-            "Unlock time did not increase"
-        );
+        assertEq(veTokenContract.lockedEnd(address(this)), unlockTimeRounded, "Unlock time did not increase");
     }
 
     function testWithdraw() public {
@@ -95,11 +78,7 @@ contract VeTokenTest is Test {
         // ブロックタイムをシミュレートしてロック期間を終了させる
         vm.warp(unlockTime + 1);
         veTokenContract.withdraw();
-        assertEq(
-            token.balanceOf(address(this)),
-            lockAmount,
-            "Failed to withdraw tokens"
-        );
+        assertEq(token.balanceOf(address(this)), lockAmount, "Failed to withdraw tokens");
     }
 
     function testIncreaseAmount() public {
@@ -113,17 +92,9 @@ contract VeTokenTest is Test {
         // ロックされたトークンの量を増やす
         veTokenContract.increaseAmount(additionalAmount);
 
-        uint256 expectedVotingPower = calculateExpectedVotingPower(
-            initialLockAmount + additionalAmount,
-            unlockTime
-        );
+        uint256 expectedVotingPower = calculateExpectedVotingPower(initialLockAmount + additionalAmount, unlockTime);
         uint256 actualVotingPower = veTokenContract.balanceOf(address(this));
 
-        assertApproxEqual(
-            actualVotingPower,
-            expectedVotingPower,
-            1e8,
-            "Locked amount did not increase as expected"
-        );
+        assertApproxEqual(actualVotingPower, expectedVotingPower, 1e8, "Locked amount did not increase as expected");
     }
 }
