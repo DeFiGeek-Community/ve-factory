@@ -16,14 +16,10 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
     event ApplyAdmin(address indexed admin);
     event ToggleAllowCheckpointToken(bool toggleFlag);
     event CheckpointToken(uint256 time, uint256 tokens);
-    event Claimed(
-        address indexed recipient,
-        uint256 amount,
-        uint256 claimEpoch,
-        uint256 maxEpoch
-    );
+    event Claimed(address indexed recipient, uint256 amount, uint256 claimEpoch, uint256 maxEpoch);
 
-    /***
+    /**
+     *
      * @notice Contract constructor
      * @param votingEscrow_ VotingEscrow contract address
      * @param startTime_ Epoch time for fee distribution to start
@@ -63,24 +59,20 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         uint256 _thisWeek = (_t / WEEK) * WEEK;
         uint256 _nextWeek;
 
-        for (uint256 i; i < 20; ) {
+        for (uint256 i; i < 20;) {
             _nextWeek = _thisWeek + WEEK;
             if (block.timestamp < _nextWeek) {
                 if (_sinceLast == 0 && block.timestamp == _t) {
                     $.tokensPerWeek[_thisWeek] += _toDistribute;
                 } else {
-                    $.tokensPerWeek[_thisWeek] +=
-                        (_toDistribute * (block.timestamp - _t)) /
-                        _sinceLast;
+                    $.tokensPerWeek[_thisWeek] += (_toDistribute * (block.timestamp - _t)) / _sinceLast;
                 }
                 break;
             } else {
                 if (_sinceLast == 0 && _nextWeek == _t) {
                     $.tokensPerWeek[_thisWeek] += _toDistribute;
                 } else {
-                    $.tokensPerWeek[_thisWeek] +=
-                        (_toDistribute * (_nextWeek - _t)) /
-                        _sinceLast;
+                    $.tokensPerWeek[_thisWeek] += (_toDistribute * (_nextWeek - _t)) / _sinceLast;
                 }
             }
             _t = _nextWeek;
@@ -93,28 +85,24 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         emit CheckpointToken(block.timestamp, _toDistribute);
     }
 
-    /***
+    /**
+     *
      * @notice Update the token checkpoint
      * @dev Calculates the total number of tokens to be distributed in a given week.
-         During setup for the initial distribution this function is only callable
-         by the contract owner. Beyond initial distro, it can be enabled for anyone
-         to call.
+     *      During setup for the initial distribution this function is only callable
+     *      by the contract owner. Beyond initial distro, it can be enabled for anyone
+     *      to call.
      */
     function checkpointToken() external {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         require(
-            msg.sender == $.admin ||
-                ($.canCheckpointToken &&
-                    block.timestamp > $.lastTokenTime + 1 hours),
+            msg.sender == $.admin || ($.canCheckpointToken && block.timestamp > $.lastTokenTime + 1 hours),
             "Unauthorized"
         );
         _checkpointToken();
     }
 
-    function _findTimestampEpoch(
-        address ve_,
-        uint256 timestamp_
-    ) internal view returns (uint256) {
+    function _findTimestampEpoch(address ve_, uint256 timestamp_) internal view returns (uint256) {
         uint256 _min;
         uint256 _max = IVeToken(ve_).epoch();
 
@@ -124,8 +112,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
                     break;
                 }
                 uint256 _mid = (_min + _max + 2) / 2;
-                FeeDistributorSchema.Point memory _pt = IVeToken(ve_)
-                    .pointHistory(_mid);
+                FeeDistributorSchema.Point memory _pt = IVeToken(ve_).pointHistory(_mid);
                 if (_pt.ts <= timestamp_) {
                     _min = _mid;
                 } else {
@@ -136,12 +123,11 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         return _min;
     }
 
-    function _findTimestampUserEpoch(
-        address ve_,
-        address user_,
-        uint256 timestamp_,
-        uint256 maxUserEpoch_
-    ) internal view returns (uint256) {
+    function _findTimestampUserEpoch(address ve_, address user_, uint256 timestamp_, uint256 maxUserEpoch_)
+        internal
+        view
+        returns (uint256)
+    {
         uint256 _min;
         uint256 _max = maxUserEpoch_;
 
@@ -151,8 +137,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
                     break;
                 }
                 uint256 _mid = (_min + _max + 2) / 2;
-                FeeDistributorSchema.Point memory _pt = IVeToken(ve_)
-                    .userPointHistory(user_, _mid);
+                FeeDistributorSchema.Point memory _pt = IVeToken(ve_).userPointHistory(user_, _mid);
                 if (_pt.ts <= timestamp_) {
                     _min = _mid;
                 } else {
@@ -163,33 +148,21 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         return _min;
     }
 
-    /***
+    /**
+     *
      * @notice Get the veToken balance for `user_` at `timestamp_`
      * @param user_ Address to query balance for
      * @param timestamp_ Epoch time
      * @return uint256 veToken balance
      */
-    function veForAt(
-        address user_,
-        uint256 timestamp_
-    ) external view returns (uint256) {
+    function veForAt(address user_, uint256 timestamp_) external view returns (uint256) {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
 
         address _ve = $.votingEscrow;
         uint256 _maxUserEpoch = IVeToken(_ve).userPointEpoch(user_);
-        uint256 _epoch = _findTimestampUserEpoch(
-            _ve,
-            user_,
-            timestamp_,
-            _maxUserEpoch
-        );
-        FeeDistributorSchema.Point memory _pt = IVeToken(_ve).userPointHistory(
-            user_,
-            _epoch
-        );
-        int128 _balance = _pt.bias -
-            _pt.slope *
-            int128(int256(timestamp_ - _pt.ts));
+        uint256 _epoch = _findTimestampUserEpoch(_ve, user_, timestamp_, _maxUserEpoch);
+        FeeDistributorSchema.Point memory _pt = IVeToken(_ve).userPointHistory(user_, _epoch);
+        int128 _balance = _pt.bias - _pt.slope * int128(int256(timestamp_ - _pt.ts));
         if (_balance < 0) {
             return 0;
         } else {
@@ -204,13 +177,12 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
         IVeToken(_ve).checkpoint();
 
-        for (uint256 i; i < 20; ) {
+        for (uint256 i; i < 20;) {
             if (_t > _roundedTimestamp) {
                 break;
             } else {
                 uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve)
-                    .pointHistory(_epoch);
+                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
                 int128 _dt;
                 if (_t > _pt.ts) {
                     _dt = int128(int256(_t) - int256(_pt.ts));
@@ -226,7 +198,8 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         $.timeCursor = _t;
     }
 
-    /***
+    /**
+     *
      * @notice Update the veToken total supply checkpoint
      * @dev The checkpoint is also updated by the first claimant each new epoch week. This function may be called independently of a claim, to reduce claiming gas costs.
      */
@@ -237,13 +210,12 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
         IVeToken(_ve).checkpoint();
 
-        for (uint256 i; i < 20; ) {
+        for (uint256 i; i < 20;) {
             if (_t > _roundedTimestamp) {
                 break;
             } else {
                 uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve)
-                    .pointHistory(_epoch);
+                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
                 uint256 _dt;
                 if (_t > _pt.ts) {
                     _dt = uint256(int256(_t) - int256(_pt.ts));
@@ -265,11 +237,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         $.timeCursor = _t;
     }
 
-    function _claim(
-        address addr_,
-        address ve_,
-        uint256 lastTokenTime_
-    ) internal returns (uint256) {
+    function _claim(address addr_, address ve_, uint256 lastTokenTime_) internal returns (uint256) {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
 
         // Minimal user_epoch is 0 (if user had no point)
@@ -287,12 +255,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         uint256 _weekCursor = $.timeCursorOf[addr_];
         if (_weekCursor == 0) {
             // Need to do the initial binary search
-            _userEpoch = _findTimestampUserEpoch(
-                ve_,
-                addr_,
-                _startTime,
-                _maxUserEpoch
-            );
+            _userEpoch = _findTimestampUserEpoch(ve_, addr_, _startTime, _maxUserEpoch);
         } else {
             _userEpoch = $.userEpochOf[addr_];
         }
@@ -301,8 +264,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
             _userEpoch = 1;
         }
 
-        FeeDistributorSchema.Point memory _userPoint = IVeToken(ve_)
-            .userPointHistory(addr_, _userEpoch);
+        FeeDistributorSchema.Point memory _userPoint = IVeToken(ve_).userPointHistory(addr_, _userEpoch);
 
         if (_weekCursor == 0) {
             _weekCursor = ((_userPoint.ts + WEEK - 1) / WEEK) * WEEK;
@@ -316,16 +278,13 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
             _weekCursor = _startTime;
         }
 
-        FeeDistributorSchema.Point memory _oldUserPoint = FeeDistributorSchema
-            .Point({bias: 0, slope: 0, ts: 0, blk: 0});
+        FeeDistributorSchema.Point memory _oldUserPoint = FeeDistributorSchema.Point({bias: 0, slope: 0, ts: 0, blk: 0});
 
         // Iterate over weeks
-        for (uint256 i; i < 50; ) {
+        for (uint256 i; i < 50;) {
             if (_weekCursor >= lastTokenTime_) {
                 break;
-            } else if (
-                _weekCursor >= _userPoint.ts && _userEpoch <= _maxUserEpoch
-            ) {
+            } else if (_weekCursor >= _userPoint.ts && _userEpoch <= _maxUserEpoch) {
                 ++_userEpoch;
                 _oldUserPoint = FeeDistributorSchema.Point({
                     bias: _userPoint.bias,
@@ -334,29 +293,14 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
                     blk: _userPoint.blk
                 });
                 if (_userEpoch > _maxUserEpoch) {
-                    _userPoint = FeeDistributorSchema.Point({
-                        bias: 0,
-                        slope: 0,
-                        ts: 0,
-                        blk: 0
-                    });
+                    _userPoint = FeeDistributorSchema.Point({bias: 0, slope: 0, ts: 0, blk: 0});
                 } else {
-                    _userPoint = IVeToken(ve_).userPointHistory(
-                        addr_,
-                        _userEpoch
-                    );
+                    _userPoint = IVeToken(ve_).userPointHistory(addr_, _userEpoch);
                 }
             } else {
                 int256 _dt = int256(_weekCursor) - int256(_oldUserPoint.ts);
-                int256 _balanceOf = int256(_oldUserPoint.bias) -
-                    _dt *
-                    int256(_oldUserPoint.slope);
-                if (
-                    int256(_oldUserPoint.bias) -
-                        _dt *
-                        int256(_oldUserPoint.slope) <
-                    0
-                ) {
+                int256 _balanceOf = int256(_oldUserPoint.bias) - _dt * int256(_oldUserPoint.slope);
+                if (int256(_oldUserPoint.bias) - _dt * int256(_oldUserPoint.slope) < 0) {
                     _balanceOf = 0;
                 }
 
@@ -364,9 +308,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
                     break;
                 }
                 if (_balanceOf > 0) {
-                    _toDistribute +=
-                        (uint256(_balanceOf) * $.tokensPerWeek[_weekCursor]) /
-                        $.veSupply[_weekCursor];
+                    _toDistribute += (uint256(_balanceOf) * $.tokensPerWeek[_weekCursor]) / $.veSupply[_weekCursor];
                 }
                 _weekCursor += WEEK;
             }
@@ -384,13 +326,14 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         return _toDistribute;
     }
 
-    /***
+    /**
+     *
      * @notice Claim fees for `msg.sender`
      * @dev Each call to claim look at a maximum of 50 user veToken points.
-         For accounts with many veToken related actions, this function
-         may need to be called more than once to claim all available
-         fees. In the `Claimed` event that fires, if `claim_epoch` is
-         less than `max_epoch`, the account may claim again.
+     *      For accounts with many veToken related actions, this function
+     *      may need to be called more than once to claim all available
+     *      fees. In the `Claimed` event that fires, if `claim_epoch` is
+     *      less than `max_epoch`, the account may claim again.
      * @return uint256 Amount of fees claimed in the call
      */
     function claim() external nonReentrant returns (uint256) {
@@ -403,9 +346,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _lastTokenTime = $.lastTokenTime;
 
-        if (
-            $.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)
-        ) {
+        if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
             _checkpointToken();
             _lastTokenTime = block.timestamp;
         }
@@ -416,23 +357,21 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _amount = _claim(_addr, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
-            require(
-                IERC20($.token).transfer(_addr, _amount),
-                "Transfer failed"
-            );
+            require(IERC20($.token).transfer(_addr, _amount), "Transfer failed");
             $.tokenLastBalance -= _amount;
         }
 
         return _amount;
     }
 
-    /***
+    /**
+     *
      * @notice Claim fees for `addr_`
      * @dev Each call to claim look at a maximum of 50 user veToken points.
-         For accounts with many veToken related actions, this function
-         may need to be called more than once to claim all available
-         fees. In the `Claimed` event that fires, if `claim_epoch` is
-         less than `max_epoch`, the account may claim again.
+     *      For accounts with many veToken related actions, this function
+     *      may need to be called more than once to claim all available
+     *      fees. In the `Claimed` event that fires, if `claim_epoch` is
+     *      less than `max_epoch`, the account may claim again.
      * @param addr_ Address to claim fees for
      * @return uint256 Amount of fees claimed in the call
      */
@@ -446,9 +385,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _lastTokenTime = $.lastTokenTime;
 
-        if (
-            $.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)
-        ) {
+        if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
             _checkpointToken();
             _lastTokenTime = block.timestamp;
         }
@@ -459,28 +396,24 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _amount = _claim(addr_, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
-            require(
-                IERC20($.token).transfer(addr_, _amount),
-                "Transfer failed"
-            );
+            require(IERC20($.token).transfer(addr_, _amount), "Transfer failed");
             $.tokenLastBalance -= _amount;
         }
 
         return _amount;
     }
 
-    /***
+    /**
+     *
      * @notice Make multiple fee claims in a single call
      * @dev Used to claim for many accounts at once, or to make
-         multiple claims for the same address when that address
-         has significant veToken history
+     *      multiple claims for the same address when that address
+     *      has significant veToken history
      * @param receivers_ List of addresses to claim for. Claiming
-                      terminates at the first `ZERO_ADDRESS`.
+     *                   terminates at the first `ZERO_ADDRESS`.
      * @return bool success
      */
-    function claimMany(
-        address[] memory receivers_
-    ) external nonReentrant returns (bool) {
+    function claimMany(address[] memory receivers_) external nonReentrant returns (bool) {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
 
         require(!$.isKilled, "Contract is killed");
@@ -491,9 +424,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _lastTokenTime = $.lastTokenTime;
 
-        if (
-            $.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)
-        ) {
+        if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
             _checkpointToken();
             _lastTokenTime = block.timestamp;
         }
@@ -501,7 +432,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
         uint256 _total;
         uint256 _l = receivers_.length;
-        for (uint256 i; i < _l; ) {
+        for (uint256 i; i < _l;) {
             address _addr = receivers_[i];
             if (_addr == address(0)) {
                 break;
@@ -509,10 +440,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
 
             uint256 _amount = _claim(_addr, $.votingEscrow, _lastTokenTime);
             if (_amount != 0) {
-                require(
-                    IERC20($.token).transfer(_addr, _amount),
-                    "Transfer failed"
-                );
+                require(IERC20($.token).transfer(_addr, _amount), "Transfer failed");
                 _total += _amount;
             }
             unchecked {
@@ -527,7 +455,8 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         return true;
     }
 
-    /***
+    /**
+     *
      * @notice Receive Token into the contract and trigger a token checkpoint
      * @param coin_ Address of the coin being received
      * @return bool success
@@ -541,17 +470,15 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         uint256 _amount = IERC20($.token).balanceOf(msg.sender);
         if (_amount > 0) {
             IERC20($.token).transferFrom(msg.sender, address(this), _amount);
-            if (
-                $.canCheckpointToken &&
-                block.timestamp > $.lastTokenTime + 1 hours
-            ) {
+            if ($.canCheckpointToken && block.timestamp > $.lastTokenTime + 1 hours) {
                 _checkpointToken();
             }
         }
         return true;
     }
 
-    /***
+    /**
+     *
      * @notice Commit transfer of ownership
      * @param addr_ New admin address
      */
@@ -562,7 +489,8 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         emit CommitAdmin(addr_);
     }
 
-    /***
+    /**
+     *
      * @notice Apply transfer of ownership
      */
     function applyAdmin() external onlyAdmin {
@@ -573,7 +501,8 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         emit ApplyAdmin($.futureAdmin);
     }
 
-    /***
+    /**
+     *
      * @notice Toggle permission for checkpointing by any account
      */
     function toggleAllowCheckpointToken() external onlyAdmin {
@@ -583,25 +512,23 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         emit ToggleAllowCheckpointToken($.canCheckpointToken);
     }
 
-    /***
+    /**
+     *
      * @notice Kill the contract
      * @dev Killing transfers the entire Token balance to the emergency return address
-         and blocks the ability to claim or burn. The contract cannot be unkilled.
+     *      and blocks the ability to claim or burn. The contract cannot be unkilled.
      */
     function killMe() external onlyAdmin {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
 
         $.isKilled = true;
         require(
-            IERC20($.token).transfer(
-                $.emergencyReturn,
-                IERC20($.token).balanceOf(address(this))
-            ),
-            "Transfer failed"
+            IERC20($.token).transfer($.emergencyReturn, IERC20($.token).balanceOf(address(this))), "Transfer failed"
         );
     }
 
-    /***
+    /**
+     *
      * @notice Recover ERC20 tokens from this contract
      * @dev Tokens are sent to the emergency return address.
      * @param coin_ Token address
@@ -613,10 +540,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
         require(coin_ != address($.token), "Cannot recover this token");
 
         uint256 _amount = IERC20(coin_).balanceOf(address(this));
-        require(
-            IERC20(coin_).transfer($.emergencyReturn, _amount),
-            "Transfer failed"
-        );
+        require(IERC20(coin_).transfer($.emergencyReturn, _amount), "Transfer failed");
         return true;
     }
 
