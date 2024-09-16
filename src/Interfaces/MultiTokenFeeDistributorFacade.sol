@@ -3,11 +3,7 @@ pragma solidity ^0.8.24;
 
 contract MultiTokenFeeDistributorFacade {
     // Initialization and administrative functions
-    function initialize(
-        address votingEscrow_,
-        address admin_,
-        address emergencyReturn_
-    ) external {}
+    function initialize(address votingEscrow_, address admin_, address emergencyReturn_) external {}
 
     function commitAdmin(address addr_) external {}
 

@@ -28,7 +28,6 @@ library MultiTokenFeeDistributorSchema {
         mapping(uint256 => uint256) veSupply;
     }
 
-
     struct Point {
         int128 bias;
         int128 slope;

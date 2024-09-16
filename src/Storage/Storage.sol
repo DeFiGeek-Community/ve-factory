@@ -10,11 +10,7 @@ library Storage {
     bytes32 private constant FEE_DISTRIBUTOR_STORAGE_LOCATION =
         0x965167c5566e6400ca5c0b84cde19d419bf7efdf30963b12dce3259d1e4b8d11;
 
-    function FeeDistributor()
-        internal
-        pure
-        returns (FeeDistributorSchema.Storage storage s)
-    {
+    function FeeDistributor() internal pure returns (FeeDistributorSchema.Storage storage s) {
         assembly {
             s.slot := FEE_DISTRIBUTOR_STORAGE_LOCATION
         }
@@ -25,11 +21,7 @@ library Storage {
     bytes32 private constant MULTI_TOKEN_FEE_DISTRIBUTOR_STORAGE_LOCATION =
         0x7696fbeb7b2058c668a217a0eec72abde89fab471f589cf41a33a6b2983cd600;
 
-    function MultiTokenFeeDistributor()
-        internal
-        pure
-        returns (MultiTokenFeeDistributorSchema.Storage storage s)
-    {
+    function MultiTokenFeeDistributor() internal pure returns (MultiTokenFeeDistributorSchema.Storage storage s) {
         assembly {
             s.slot := MULTI_TOKEN_FEE_DISTRIBUTOR_STORAGE_LOCATION
         }

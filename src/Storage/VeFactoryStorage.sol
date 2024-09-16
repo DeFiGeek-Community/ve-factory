@@ -8,11 +8,7 @@ library VeFactoryStorage {
     bytes32 private constant DEPLOYED_VETOKENS_STORAGE_LOCATION =
         0x965167c5566e6400ca5c0b84cde19d419bf7efdf30963b12dce3259d1e4b8d00;
 
-    function Factory()
-        internal
-        pure
-        returns (VeFactorySchema.VeFactoryStorage storage s)
-    {
+    function Factory() internal pure returns (VeFactorySchema.VeFactoryStorage storage s) {
         assembly {
             s.slot := DEPLOYED_VETOKENS_STORAGE_LOCATION
         }
