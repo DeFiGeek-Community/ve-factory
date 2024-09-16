@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/proxy/Proxy.sol";
-import { Test } from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
 abstract contract TestBase is Test, Proxy {
     struct Function {
@@ -19,8 +19,10 @@ abstract contract TestBase is Test, Proxy {
         functions.push(Function(selector_, impl_));
         implementations[selector_] = impl_;
     }
+
     function _implementation() internal view override returns (address) {
         return implementations[msg.sig];
     }
+
     receive() external payable {}
 }
