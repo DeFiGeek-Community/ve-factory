@@ -320,7 +320,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         FeeDistributorSchema.Point memory _userPoint = IVeToken(ve_).userPointHistory(userAddress_, _userEpoch);
 
         if (_weekCursor == 0) {
-            _weekCursor = ((_userPoint.ts + WEEK - 1) / WEEK) * WEEK;
+            _weekCursor = ((_userPoint.ts + WEEK) / WEEK) * WEEK;
         }
 
         if (_weekCursor >= lastTokenTime_) {
