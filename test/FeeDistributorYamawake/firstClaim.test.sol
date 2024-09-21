@@ -24,26 +24,26 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
     SampleToken stakeToken;
 
     function setUp() public {
-        // Initialize tokens
+        // トークンの初期化
         rewardToken1 = new SampleToken(1e26);
         rewardToken2 = new SampleToken(1e26);
         stakeToken = new SampleToken(1e26);
 
-        // Initialize the veToken
+        // veTokenの初期化
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
-        // Initialize the distributor with the veToken
+        // veTokenを使用してディストリビュータを初期化
         vm.prank(admin);
         distributor = new FeeDistributorYamawake(address(veToken), address(this), block.timestamp + THREE_MONTHS);
 
-        // Lock user tokens in veToken
+        // ユーザーのトークンをveTokenにロック
         stakeToken.transfer(user1, amount);
         vm.prank(user1);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user1);
         veToken.createLock(amount, block.timestamp + 30 * WEEK);
 
-        // Admin adds rewardToken with a start time of 3 months from now
+        // 管理者が3ヶ月後に開始する報酬トークンを追加
         vm.prank(admin);
         distributor.addRewardToken(address(rewardToken1));
     }
@@ -52,11 +52,13 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         return (timestamp / WEEK) * WEEK;
     }
 
+    // テスト名: testClaimRewardToken1WithLateLock
+    // コメント: ユーザー2が遅れてロックした場合の報酬請求テスト
     function testClaimRewardToken1WithLateLock() public {
-        // Send some reward tokens to the distributor contract
+        // ディストリビュータコントラクトに報酬トークンを送信
         rewardToken1.transfer(address(distributor), 1e18 * 100);
 
-        // Warp to 3 months later (after the reward distribution start time)
+        // 3ヶ月後に時間を進める（報酬分配開始後）
         vm.warp(distributor.startTime() + 1 weeks);
 
         distributor.checkpointTotalSupply();
@@ -65,17 +67,15 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         vm.prank(user1);
         distributor.claim(address(rewardToken1));
 
-        // User2 creates a new lock after the start time
+        // ユーザー2が開始時間後に新しいロックを作成
         stakeToken.transfer(user2, amount);
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
         veToken.createLock(amount, block.timestamp + 30 * WEEK);
 
-
-
         vm.warp(roundToWeek(distributor.startTime()) + 2 weeks);
-        // User2 tries to claim but should fail because the lock was created after the start time
+        // ユーザー2が請求を試みるが、ロックが開始時間後に作成されたため失敗するはず
         vm.prank(admin);
         distributor.checkpointToken(address(rewardToken1));
         vm.prank(user1);
@@ -84,10 +84,10 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         distributor.claim(address(rewardToken1));
     }
 
-
+    // テスト名: testClaimAfterLongPeriod
+    // コメント: 長期間後の報酬請求テスト
     function testClaimAfterLongPeriod() public {
-
-        // user2がトークンをロック
+        // ユーザー2がトークンをロック
         stakeToken.transfer(user2, 1e18);
         vm.prank(user2);
         stakeToken.approve(address(veToken), 1e18);
@@ -100,21 +100,10 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         // 30週間時間を進める
         vm.warp(distributor.startTime() + 30 * WEEK);
 
-        // user2が請求
+        // ユーザー2が請求
         vm.prank(admin);
         distributor.checkpointToken(address(rewardToken1));
         vm.prank(user2);
         distributor.claim(address(rewardToken1));
-
-        // uint256 startTime = distributor.startTime();
-        // for (uint256 i = 0; i <= 30; i++) {
-        //     uint256 week = startTime + (i * WEEK);
-        //     uint256 veSupply = distributor.veSupply(week);
-        //     uint256 tokensPerWeek = distributor.tokensPerWeek(address(rewardToken1), week);
-        //     console.log(week);
-        //     console.log(veSupply);
-        //     console.log(tokensPerWeek);
-        // }
     }
-
 }
