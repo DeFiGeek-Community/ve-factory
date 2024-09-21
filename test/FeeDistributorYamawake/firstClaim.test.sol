@@ -75,7 +75,7 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         veToken.createLock(amount, block.timestamp + 30 * WEEK);
 
         vm.warp(roundToWeek(distributor.startTime()) + 2 weeks);
-        // ユーザー2が請求を試みるが、ロックが開始時間後に作成されたため失敗するはず
+        // ユーザー2が請求を試みる
         vm.prank(admin);
         distributor.checkpointToken(address(rewardToken1));
         vm.prank(user1);
