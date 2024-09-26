@@ -17,7 +17,9 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     event ToggleAllowCheckpointToken(bool toggleFlag);
     event CheckpointToken(uint256 time, uint256 tokens);
     event Claimed(address indexed recipient, uint256 amount, uint256 claimEpoch, uint256 maxEpoch);
-
+    event eventTokensPerWeek(uint256 time, uint256 value);
+    event eventVeSupply(uint256 time, uint256 value);
+    event eventBalance(uint256 time, uint256 value);
     /**
      *
      * @notice Contract constructor
@@ -57,13 +59,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _sinceLast = block.timestamp - _t;
         uint256 _currentWeek = block.timestamp / WEEK;
         uint256 _sinceLastInWeeks = _currentWeek - (_t / WEEK);
-        if (_sinceLastInWeeks > 0) {
-            _t = ((_t + WEEK) / WEEK) * WEEK;
-            _sinceLast = block.timestamp - _t;
-            _sinceLastInWeeks = _currentWeek - _t / WEEK;
-        }
         if (_sinceLastInWeeks >= 20) {
-            _t = ((block.timestamp - (WEEK * 19)) / WEEK) * WEEK;
+            _t = ((block.timestamp - (WEEK * 20)) / WEEK) * WEEK;
             _sinceLast = block.timestamp - _t;
         }
         $.lastTokenTime = block.timestamp;
@@ -87,6 +84,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                     $.tokensPerWeek[_thisWeek] += (_toDistribute * (_nextWeek - _t)) / _sinceLast;
                 }
             }
+            emit eventTokensPerWeek(_thisWeek, $.tokensPerWeek[_thisWeek]);
             _t = _nextWeek;
             _thisWeek = _nextWeek;
             unchecked {
@@ -185,11 +183,19 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function _checkpointTotalSupply() internal {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         address _ve = $.votingEscrow;
-        uint256 _t = $.timeCursor;
+        uint256 _t = $.timeCursor - WEEK;
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
         IVeToken(_ve).checkpoint();
 
-        for (uint256 i; i < 20;) {
+        uint256 _sinceLastInWeeks;
+        unchecked {
+            _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
+        }
+        if (_sinceLastInWeeks >= 20) {
+            _t = (_roundedTimestamp - WEEK * 20);
+        }
+
+        for (uint256 i; i < 21;) {
             if (_t > _roundedTimestamp) {
                 break;
             } else {
@@ -200,6 +206,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                     _dt = int128(int256(_t) - int256(_pt.ts));
                 }
                 $.veSupply[_t] = uint256(int256(_pt.bias - _pt.slope * _dt));
+                emit eventVeSupply(_t, $.veSupply[_t]);
                 _t += WEEK;
             }
             unchecked {
@@ -216,37 +223,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @dev The checkpoint is also updated by the first claimant each new epoch week. This function may be called independently of a claim, to reduce claiming gas costs.
      */
     function checkpointTotalSupply() external {
-        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
-        address _ve = $.votingEscrow;
-        uint256 _t = $.timeCursor;
-        uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
-        IVeToken(_ve).checkpoint();
-
-        for (uint256 i; i < 20;) {
-            if (_t > _roundedTimestamp) {
-                break;
-            } else {
-                uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
-                uint256 _dt;
-                if (_t > _pt.ts) {
-                    _dt = uint256(int256(_t) - int256(_pt.ts));
-                }
-
-                int128 _balance = _pt.bias - _pt.slope * int128(int256(_dt));
-                if (_balance < 0) {
-                    $.veSupply[_t] = 0;
-                } else {
-                    $.veSupply[_t] = uint256(uint128(_balance));
-                }
-            }
-            _t += WEEK;
-            unchecked {
-                ++i;
-            }
-        }
-
-        $.timeCursor = _t;
+        _checkpointTotalSupply();
     }
 
     function _claim(address addr_, address ve_, uint256 lastTokenTime_) internal returns (uint256) {
@@ -258,13 +235,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(addr_);
         uint256 _startTime = $.startTime;
-        uint256 _thisWeek = (block.timestamp / WEEK) * WEEK;
         uint256 _lastTokenTime = lastTokenTime_;
-        uint256 _latestFeeUnlockTime = ((lastTokenTime_ + WEEK) / WEEK) * WEEK;
-
-        if (_thisWeek >= _latestFeeUnlockTime) {
-            _lastTokenTime = _latestFeeUnlockTime;
-        }
 
         if (_maxUserEpoch == 0) {
             // No lock = no fees
@@ -319,14 +290,17 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             } else {
                 int256 _dt = int256(_weekCursor) - int256(_oldUserPoint.ts);
                 int256 _balanceOf = int256(_oldUserPoint.bias) - _dt * int256(_oldUserPoint.slope);
-                if (int256(_oldUserPoint.bias) - _dt * int256(_oldUserPoint.slope) < 0) {
+                if (_balanceOf < 0) {
                     _balanceOf = 0;
                 }
 
                 if (_balanceOf == 0 && _userEpoch > _maxUserEpoch) {
                     break;
                 }
-                if (_balanceOf > 0) {
+                if (_balanceOf > 0 && $.veSupply[_weekCursor] > 0) {
+                    emit eventTokensPerWeek(_weekCursor, $.tokensPerWeek[_weekCursor]);
+                    emit eventVeSupply(_weekCursor, $.veSupply[_weekCursor]);
+                    emit eventBalance(_weekCursor, uint256(_balanceOf));
                     _toDistribute += (uint256(_balanceOf) * $.tokensPerWeek[_weekCursor]) / $.veSupply[_weekCursor];
                 }
                 _weekCursor += WEEK;
