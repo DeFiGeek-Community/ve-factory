@@ -19,6 +19,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     event Claimed(
         address indexed tokenAddress, address indexed recipient, uint256 amount, uint256 claimEpoch, uint256 maxEpoch
     );
+    event eventTokensPerWeek(uint256 time, uint256 value);
+    event eventVeSupply(uint256 time, uint256 value);
+    event eventBalance(uint256 time, uint256 value);
 
     /**
      * @notice Initializes the contract with necessary parameters.
@@ -52,11 +55,6 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _currentWeek = block.timestamp / WEEK;
         uint256 _sinceLastInWeeks = _currentWeek - (_t / WEEK);
 
-        if (_sinceLastInWeeks > 0) {
-            _t = ((_t + WEEK) / WEEK) * WEEK;
-            _sinceLast = block.timestamp - _t;
-            _sinceLastInWeeks = _currentWeek - _t / WEEK;
-        }
         /*
         If _sinceLast has exceeded 20 weeks,
         set _t to the beginning of the week that is 19 weeks prior to the current block time.
@@ -70,7 +68,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         No fee will be allocated to the weeks prior to week 5.
         */
         if (_sinceLastInWeeks >= 20) {
-            _t = ((block.timestamp - (WEEK * 19)) / WEEK) * WEEK;
+            _t = ((block.timestamp - (WEEK * 20)) / WEEK) * WEEK;
             _sinceLast = block.timestamp - _t;
         }
 
@@ -94,6 +92,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                     $token.tokensPerWeek[_thisWeek] += (_toDistribute * (_nextWeek - _t)) / _sinceLast;
                 }
             }
+            emit eventTokensPerWeek(_thisWeek, $token.tokensPerWeek[_thisWeek]);
             _t = _nextWeek;
             _thisWeek = _nextWeek;
             unchecked {
@@ -218,25 +217,53 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
         IVeToken(_ve).checkpoint();
 
+        uint256 _sinceLastInWeeks;
+        if(_t > 0){
+            unchecked {
+                _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
+            }
+        }
+        if (_sinceLastInWeeks >= 20) {
+            _t = (_roundedTimestamp - WEEK * 19);
+        }
+        if($.lastCheckpointTotalSupplyTime >= $.timeCursor){
+            _updateVeSupply($, _ve, $.timeCursor - WEEK);
+        }
+
         for (uint256 i; i < 20;) {
             if (_t > _roundedTimestamp) {
                 break;
             } else {
-                uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
-                int128 _dt;
-                if (_t > _pt.ts) {
-                    _dt = int128(int256(_t) - int256(_pt.ts));
-                }
-                $.veSupply[_t] = uint256(int256(_pt.bias - _pt.slope * _dt));
+                _updateVeSupply($, _ve, _t);
                 _t += WEEK;
             }
             unchecked {
                 ++i;
             }
         }
-
+        $.lastCheckpointTotalSupplyTime = block.timestamp;
         $.timeCursor = _t;
+    }
+
+    /**
+     * @notice Internal function to update veSupply for a given timestamp.
+     * @param $ Reference to the storage.
+     * @param _ve The address of the veToken contract.
+     * @param _timestamp The timestamp to update veSupply for.
+     */
+    function _updateVeSupply(
+        MultiTokenFeeDistributorSchema.Storage storage $,
+        address _ve,
+        uint256 _timestamp
+    ) internal {
+        uint256 _epoch = _findTimestampEpoch(_ve, _timestamp);
+        FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
+        int128 _dt;
+        if (_timestamp > _pt.ts) {
+            _dt = int128(int256(_timestamp) - int256(_pt.ts));
+        }
+        $.veSupply[_timestamp] = uint256(int256(_pt.bias - _pt.slope * _dt));
+        emit eventVeSupply(_timestamp, $.veSupply[_timestamp]);
     }
 
     /**
@@ -244,37 +271,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @dev This function iterates through the time periods since the last checkpoint, updating the total veToken supply at each weekly checkpoint. It is designed to be called externally to ensure the veToken supply is accurately recorded over time. This function plays a critical role in the fee distribution mechanism by ensuring that the veToken supply is up to date, which directly affects the calculation of fee distributions.
      */
     function checkpointTotalSupply() external {
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        address _ve = $.votingEscrow;
-        uint256 _t = $.timeCursor;
-        uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
-        IVeToken(_ve).checkpoint();
-
-        for (uint256 i; i < 20;) {
-            if (_t > _roundedTimestamp) {
-                break;
-            } else {
-                uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
-                uint256 _dt;
-                if (_t > _pt.ts) {
-                    _dt = uint256(int256(_t) - int256(_pt.ts));
-                }
-
-                int128 _balance = _pt.bias - _pt.slope * int128(int256(_dt));
-                if (_balance < 0) {
-                    $.veSupply[_t] = 0;
-                } else {
-                    $.veSupply[_t] = uint256(uint128(_balance));
-                }
-            }
-            _t += WEEK;
-            unchecked {
-                ++i;
-            }
-        }
-
-        $.timeCursor = _t;
+        _checkpointTotalSupply();
     }
 
     /**
@@ -299,7 +296,13 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(userAddress_);
         uint256 _startTime = $.startTime;
+        uint256 _thisWeek = (block.timestamp / WEEK) * WEEK;
+        uint256 _lastTokenTime = lastTokenTime_;
+        uint256 _latestFeeUnlockTime = ((lastTokenTime_ + WEEK) / WEEK) * WEEK;
 
+        if (_thisWeek >= _latestFeeUnlockTime) {
+            _lastTokenTime = _latestFeeUnlockTime;
+        }
         if (_maxUserEpoch == 0) {
             // No lock = no fees
             return 0;
@@ -320,7 +323,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         FeeDistributorSchema.Point memory _userPoint = IVeToken(ve_).userPointHistory(userAddress_, _userEpoch);
 
         if (_weekCursor == 0) {
-            _weekCursor = ((_userPoint.ts + WEEK) / WEEK) * WEEK;
+            _weekCursor = ((_userPoint.ts + WEEK - 1) / WEEK) * WEEK;
         }
 
         if (_weekCursor >= lastTokenTime_) {
@@ -353,14 +356,18 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             } else {
                 int256 _dt = int256(_weekCursor) - int256(_oldUserPoint.ts);
                 int256 _balanceOf = int256(_oldUserPoint.bias) - _dt * int256(_oldUserPoint.slope);
-                if (int256(_oldUserPoint.bias) - _dt * int256(_oldUserPoint.slope) < 0) {
+                if (_balanceOf < 0) {
                     _balanceOf = 0;
                 }
 
                 if (_balanceOf == 0 && _userEpoch > _maxUserEpoch) {
                     break;
                 }
-                if (_balanceOf > 0) {
+
+                if (_balanceOf > 0 && $.veSupply[_weekCursor] > 0) {
+                    emit eventTokensPerWeek(_weekCursor, $token.tokensPerWeek[_weekCursor]);
+                    emit eventVeSupply(_weekCursor, $.veSupply[_weekCursor]);
+                    emit eventBalance(_weekCursor, uint256(_balanceOf));
                     _toDistribute += (uint256(_balanceOf) * $token.tokensPerWeek[_weekCursor]) / $.veSupply[_weekCursor];
                 }
                 _weekCursor += WEEK;
@@ -380,29 +387,32 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /**
-     *
-     * @notice Claim fees for `msg.sender`
-     * @dev Each call to claim look at a maximum of 50 user veToken points.
-     *      For accounts with many veToken related actions, this function
-     *      may need to be called more than once to claim all available
-     *      fees. In the `Claimed` event that fires, if `claim_epoch` is
-     *      less than `max_epoch`, the account may claim again.
-     * @return uint256 Amount of fees claimed in the call
+     * @notice Internal function to perform common checks and state updates before claims.
+     * @param tokenAddress_ The address of the token.
+     * @return $ Reference to the storage.
+     * @return $token Reference to the token data.
+     * @return _lastTokenTime The last token time.
      */
-    function claim(address tokenAddress_) external nonReentrant returns (uint256) {
+    function _updateClaimState(address tokenAddress_)
+        internal
+        returns (
+            MultiTokenFeeDistributorSchema.Storage storage $,
+            MultiTokenFeeDistributorSchema.TokenData storage $token,
+            uint256 _lastTokenTime
+        )
+    {
         require(_isTokenPresent(tokenAddress_), "Token not found");
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
+        $ = Storage.MultiTokenFeeDistributor();
+        $token = $.tokenData[tokenAddress_];
 
         require(!$.isKilled, "Contract is killed");
 
-        address _userAddress = msg.sender;
         if (block.timestamp >= $.timeCursor) {
             _checkpointTotalSupply();
         }
 
-        uint256 _lastTokenTime = $token.lastTokenTime;
+        _lastTokenTime = $token.lastTokenTime;
 
         if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
             _checkpointToken(tokenAddress_);
@@ -412,6 +422,21 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         unchecked {
             _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
         }
+    }
+
+    /**
+     * @notice Claim fees for `msg.sender`.
+     * @dev Each call to claim checks a maximum of 50 user veToken points.
+     * @return uint256 Amount of fees claimed in the call.
+     */
+    function claim(address tokenAddress_) external nonReentrant returns (uint256) {
+        address _userAddress = msg.sender;
+
+        (
+            MultiTokenFeeDistributorSchema.Storage storage $,
+            MultiTokenFeeDistributorSchema.TokenData storage $token,
+            uint256 _lastTokenTime
+        ) = _updateClaimState(tokenAddress_);
 
         uint256 _amount = _claim(_userAddress, tokenAddress_, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
@@ -423,38 +448,17 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /**
-     *
-     * @notice Claim fees for `addr_`
-     * @dev Each call to claim look at a maximum of 50 user veToken points.
-     *      For accounts with many veToken related actions, this function
-     *      may need to be called more than once to claim all available
-     *      fees. In the `Claimed` event that fires, if `claim_epoch` is
-     *      less than `max_epoch`, the account may claim again.
-     * @param userAddress_ Address to claim fees for
-     * @return uint256 Amount of fees claimed in the call
+     * @notice Claim fees for `userAddress_`.
+     * @dev Each call to claim checks a maximum of 50 user veToken points.
+     * @param userAddress_ Address to claim fees for.
+     * @return uint256 Amount of fees claimed in the call.
      */
     function claimFor(address userAddress_, address tokenAddress_) external nonReentrant returns (uint256) {
-        require(_isTokenPresent(tokenAddress_), "Token not found");
-
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
-
-        require(!$.isKilled, "Contract is killed");
-
-        if (block.timestamp >= $.timeCursor) {
-            _checkpointTotalSupply();
-        }
-
-        uint256 _lastTokenTime = $token.lastTokenTime;
-
-        if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
-            _checkpointToken(tokenAddress_);
-            _lastTokenTime = block.timestamp;
-        }
-
-        unchecked {
-            _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
-        }
+        (
+            MultiTokenFeeDistributorSchema.Storage storage $,
+            MultiTokenFeeDistributorSchema.TokenData storage $token,
+            uint256 _lastTokenTime
+        ) = _updateClaimState(tokenAddress_);
 
         uint256 _amount = _claim(userAddress_, tokenAddress_, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
@@ -466,34 +470,18 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /**
-     *
-     * @notice Make multiple fee claims in a single call
-     * @dev Used to claim for many accounts at once, or to make
-     *      multiple claims for the same address when that address
-     *      has significant veToken history
-     * @param receivers_ List of addresses to claim for. Claiming
-     *                   terminates at the first `ZERO_ADDRESS`.
-     * @return bool success
+     * @notice Make multiple fee claims in a single call.
+     * @dev Used to claim for many accounts at once.
+     * @param receivers_ List of addresses to claim for.
+     * @return bool Success.
      */
     function claimMany(address[] memory receivers_, address tokenAddress_) external nonReentrant returns (bool) {
-        require(_isTokenPresent(tokenAddress_), "Token not found");
+        (
+            MultiTokenFeeDistributorSchema.Storage storage $,
+            MultiTokenFeeDistributorSchema.TokenData storage $token,
+            uint256 _lastTokenTime
+        ) = _updateClaimState(tokenAddress_);
 
-        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
-        require(!$.isKilled, "Contract is killed");
-
-        if (block.timestamp >= $.timeCursor) {
-            _checkpointTotalSupply();
-        }
-
-        uint256 _lastTokenTime = $token.lastTokenTime;
-
-        if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
-            _checkpointToken(tokenAddress_);
-            _lastTokenTime = block.timestamp;
-        }
-
-        _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
         uint256 _total;
         uint256 _l = receivers_.length;
         for (uint256 i; i < _l;) {
@@ -523,7 +511,6 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @notice Claims fees for multiple tokens for `msg.sender`.
      * @param tokenAddresses_ An array of token addresses for which to claim fees.
      * @return bool Returns true upon success.
-     * @dev This function allows a user to claim fees for multiple tokens in a single transaction. It iterates over the provided array of token addresses, calling the `claim` function for each token. It requires that each token is present in the list of tokens that can be checkpointed.
      */
     function claimMultipleTokens(address[] calldata tokenAddresses_) external nonReentrant returns (bool) {
         require(tokenAddresses_.length > 0, "No tokens provided");
@@ -533,15 +520,18 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         address userAddress = msg.sender;
 
+        if (block.timestamp >= $.timeCursor) {
+            _checkpointTotalSupply();
+        }
+
         for (uint256 i; i < tokenAddresses_.length; ++i) {
             address tokenAddress = tokenAddresses_[i];
             require(_isTokenPresent(tokenAddress), "Token not found");
 
-            if (block.timestamp >= $.timeCursor) {
-                _checkpointTotalSupply();
-            }
+            MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress];
 
-            uint256 _lastTokenTime = $.tokenData[tokenAddress].lastTokenTime;
+            uint256 _lastTokenTime = $token.lastTokenTime;
+
             if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
                 _checkpointToken(tokenAddress);
                 _lastTokenTime = block.timestamp;
@@ -553,7 +543,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             uint256 amount = _claim(userAddress, tokenAddress, $.votingEscrow, _lastTokenTime);
             if (amount > 0) {
                 require(IERC20(tokenAddress).transfer(userAddress, amount), "Transfer failed");
-                $.tokenData[tokenAddress].tokenLastBalance -= amount;
+                $token.tokenLastBalance -= amount;
             }
         }
 
