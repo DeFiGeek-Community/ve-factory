@@ -68,7 +68,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         No fee will be allocated to the weeks prior to week 5.
         */
         if (_sinceLastInWeeks >= 20) {
-            _t = ((block.timestamp - (WEEK * 20)) / WEEK) * WEEK;
+            _t = ((block.timestamp - (WEEK * 19)) / WEEK) * WEEK;
             _sinceLast = block.timestamp - _t;
         }
 
@@ -123,6 +123,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             msg.sender == $.admin || ($.canCheckpointToken && block.timestamp > $token.lastTokenTime + 1 hours),
             "Unauthorized"
         );
+
+        if (block.timestamp >= $.timeCursor) {
+            _checkpointTotalSupply();
+        }
+
         _checkpointToken(tokenAddress_);
     }
 
@@ -223,11 +228,23 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
             }
         }
+        /*
+        If the time since the last checkpoint exceeds 20 weeks,
+        set the checkpoint time to the beginning of the week that is 19 weeks prior to the current block time.
+        */
         if (_sinceLastInWeeks >= 20) {
             _t = (_roundedTimestamp - WEEK * 19);
         }
-        if($.lastCheckpointTotalSupplyTime >= $.timeCursor){
-            _updateVeSupply($, _ve, $.timeCursor - WEEK);
+
+        /*
+        If the last checkpoint total supply time is the previous week,
+        update the veSupply to ensure it reflects the latest state.
+        This prevents a scenario where checkpointTotalSupply and veToken's createLock
+        occur in the same block, potentially causing veSupply to not be updated with the latest value.
+        */
+        uint256 _previousWeek = $.timeCursor - WEEK;
+        if($.lastCheckpointTotalSupplyTime == _previousWeek){
+            _updateVeSupply($, _ve, _previousWeek);
         }
 
         for (uint256 i; i < 20;) {
@@ -745,6 +762,15 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function timeCursor() public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
         return $.timeCursor;
+    }
+
+    /**
+     * @notice Returns the last checkpoint total supply time.
+     * @return uint256 The last time the total supply was checkpointed.
+     */
+    function lastCheckpointTotalSupplyTime() public view returns (uint256) {
+        MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
+        return $.lastCheckpointTotalSupplyTime;
     }
 
     /**
