@@ -57,13 +57,11 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
     function testClaimRewardToken1WithLateLock() public {
         // ディストリビュータコントラクトに報酬トークンを送信
         rewardToken1.transfer(address(distributor), 1e18 * 100);
-
-        // 3ヶ月後に時間を進める（報酬分配開始後）
-        vm.warp(distributor.startTime() + 1 weeks);
-
-        distributor.checkpointTotalSupply();
         vm.prank(admin);
         distributor.checkpointToken(address(rewardToken1));
+
+        // 3ヶ月後に時間を進める（報酬分配開始後）
+        vm.warp(distributor.startTime() + 3 weeks);
         vm.prank(user1);
         distributor.claim(address(rewardToken1));
 
@@ -71,17 +69,23 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         stakeToken.transfer(user2, amount);
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
+        vm.warp(distributor.timeCursor() - 1 weeks);
         vm.prank(user2);
         veToken.createLock(amount, block.timestamp + 30 * WEEK);
 
-        vm.warp(roundToWeek(distributor.startTime()) + 2 weeks);
-        // ユーザー2が請求を試みる
+        vm.warp(distributor.startTime() + 5 weeks);
+        rewardToken1.transfer(address(distributor), 1e18 * 100);
         vm.prank(admin);
         distributor.checkpointToken(address(rewardToken1));
+
+        vm.warp(roundToWeek(distributor.startTime()) + 7 weeks);
+        // ユーザー2が請求を試みる
+
         vm.prank(user1);
         distributor.claim(address(rewardToken1));
         vm.prank(user2);
         distributor.claim(address(rewardToken1));
+        rewardToken1.balanceOf(address(distributor));
     }
 
     // テスト名: testClaimAfterLongPeriod
@@ -101,8 +105,6 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         vm.warp(distributor.startTime() + 30 * WEEK);
 
         // ユーザー2が請求
-        vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
         vm.prank(user2);
         distributor.claim(address(rewardToken1));
     }
