@@ -12,7 +12,7 @@ interface IMultiTokenFeeDistributor {
 
     function claim(address tokenAddress_) external returns (uint256);
 
-    function claim(address userAddress_, address tokenAddress_) external returns (uint256);
+    function claimFor(address userAddress_, address tokenAddress_) external returns (uint256);
 
     function claimMany(address[] memory receivers_, address tokenAddress_) external returns (bool);
 
@@ -34,10 +34,14 @@ interface IMultiTokenFeeDistributor {
 
     function recoverBalance(address tokenAddress_) external returns (bool);
 
+    function isTokenPresent(address tokenAddress_) external view returns (bool);
+
     // View functions for storage variables
-    function startTime() external view returns (uint256);
+    function startTime(address tokenAddress) external view returns (uint256);
 
     function timeCursor() external view returns (uint256);
+
+    function lastCheckpointTotalSupplyTime() external view returns (uint256);
 
     function lastTokenTime(address tokenAddress) external view returns (uint256);
 
@@ -64,4 +68,5 @@ interface IMultiTokenFeeDistributor {
     function tokensPerWeek(address tokenAddress, uint256 week) external view returns (uint256);
 
     function veSupply(uint256 week) external view returns (uint256);
+
 }
