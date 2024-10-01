@@ -2,8 +2,27 @@
 pragma solidity ^0.8.24;
 
 contract MultiTokenFeeDistributorFacade {
-    // Initialization and administrative functions
     function initialize(address votingEscrow_, address admin_, address emergencyReturn_) external {}
+
+    function checkpointToken(address token_) external {}
+
+    function veForAt(address user_, uint256 timestamp_) external view returns (uint256) {}
+
+    function checkpointTotalSupply() external {}
+
+    function claim(address token_) external returns (uint256) {}
+
+    function claimFor(address userAddress_, address tokenAddress_) external returns (uint256) {}
+
+    function claimMany(address[] memory receivers_, address tokenAddress_) external returns (bool) {}
+
+    function claimMultipleTokens(address[] calldata tokenAddresses) external returns (bool) {}
+
+    function burn(address token_) external returns (bool) {}
+
+    function addToken(address token_, uint256 startTime_) external {}
+
+    function removeToken(address token_) external {}
 
     function commitAdmin(address addr_) external {}
 
@@ -15,26 +34,14 @@ contract MultiTokenFeeDistributorFacade {
 
     function recoverBalance(address token_) external returns (bool) {}
 
-    // Token management functions
-    function addToken(address token_, uint256 startTime_) external {}
-
-    function removeToken(address token_) external {}
-
-    function checkpointToken(address token_) external {}
-
-    function burn(address token_) external returns (bool) {}
-
-    // Claiming and distribution functions
-    function claim(address token_) external returns (uint256) {}
-
-    function claimMultipleTokens(address[] calldata tokens_) external returns (bool) {}
-
-    function checkpointTotalSupply() external {}
+    function isTokenPresent(address tokenAddress_) external view returns (bool) {}
 
     // View functions for storage variables
-    function startTime() external view returns (uint256) {}
+    function startTime(address tokenAddress) external view returns (uint256) {}
 
     function timeCursor() external view returns (uint256) {}
+
+    function lastCheckpointTotalSupplyTime() external view returns (uint256) {}
 
     function lastTokenTime(address token_) external view returns (uint256) {}
 
@@ -46,20 +53,19 @@ contract MultiTokenFeeDistributorFacade {
 
     function votingEscrow() external view returns (address) {}
 
+    function tokens() external view returns (address[] memory) {}
+
     function admin() external view returns (address) {}
 
     function futureAdmin() external view returns (address) {}
 
     function emergencyReturn() external view returns (address) {}
 
-    function tokens() external view returns (address[] memory) {}
-
-    // Additional view functions specific to MultiTokenFeeDistributor
-    function tokensPerWeek(address token_, uint256 week) external view returns (uint256) {}
-
-    function veSupply(uint256 week) external view returns (uint256) {}
-
     function timeCursorOf(address token_, address user) external view returns (uint256) {}
 
     function userEpochOf(address token_, address user) external view returns (uint256) {}
+
+    function tokensPerWeek(address token_, uint256 week) external view returns (uint256) {}
+
+    function veSupply(uint256 week) external view returns (uint256) {}
 }
