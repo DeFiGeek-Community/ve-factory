@@ -312,13 +312,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(userAddress_);
         uint256 _startTime = $token.startTime;
-        uint256 _thisWeek = (block.timestamp / WEEK) * WEEK;
-        uint256 _lastTokenTime = lastTokenTime_;
-        uint256 _latestFeeUnlockTime = ((lastTokenTime_ + WEEK) / WEEK) * WEEK;
 
-        if (_thisWeek >= _latestFeeUnlockTime) {
-            _lastTokenTime = _latestFeeUnlockTime;
-        }
         if (_maxUserEpoch == 0) {
             // No lock = no fees
             return 0;
