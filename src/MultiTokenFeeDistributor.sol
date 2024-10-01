@@ -224,7 +224,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         IVeToken(_ve).checkpoint();
 
         uint256 _sinceLastInWeeks;
-        if(_t > 0){
+        if (_t > 0) {
             unchecked {
                 _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
             }
@@ -244,7 +244,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         occur in the same block, potentially causing veSupply to not be updated with the latest value.
         */
         uint256 _previousWeek = $.timeCursor - WEEK;
-        if($.lastCheckpointTotalSupplyTime == _previousWeek){
+        if ($.lastCheckpointTotalSupplyTime == _previousWeek) {
             _updateVeSupply($, _ve, _previousWeek);
         }
 
@@ -269,11 +269,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param _ve The address of the veToken contract.
      * @param _timestamp The timestamp to update veSupply for.
      */
-    function _updateVeSupply(
-        MultiTokenFeeDistributorSchema.Storage storage $,
-        address _ve,
-        uint256 _timestamp
-    ) internal {
+    function _updateVeSupply(MultiTokenFeeDistributorSchema.Storage storage $, address _ve, uint256 _timestamp)
+        internal
+    {
         uint256 _epoch = _findTimestampEpoch(_ve, _timestamp);
         FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
         int128 _dt;
