@@ -9,12 +9,13 @@ library MultiTokenFeeDistributorSchema {
         mapping(uint256 => uint256) tokensPerWeek;
         mapping(address => uint256) timeCursorOf;
         mapping(address => uint256) userEpochOf;
+        uint256 startTime;
     }
 
     struct Storage {
         // 基本的な設定と状態
-        uint256 startTime;
         uint256 timeCursor;
+        uint256 lastCheckpointTotalSupplyTime;
         bool canCheckpointToken;
         bool isKilled;
         // アドレス関連
