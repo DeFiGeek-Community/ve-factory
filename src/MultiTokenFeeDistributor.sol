@@ -84,6 +84,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 } else {
                     $token.tokensPerWeek[_thisWeek] += (_toDistribute * (block.timestamp - _t)) / _sinceLast;
                 }
+                emit eventTokensPerWeek(_thisWeek, $token.tokensPerWeek[_thisWeek]);
                 break;
             } else {
                 if (_sinceLast == 0 && _nextWeek == _t) {
@@ -91,8 +92,8 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 } else {
                     $token.tokensPerWeek[_thisWeek] += (_toDistribute * (_nextWeek - _t)) / _sinceLast;
                 }
+                emit eventTokensPerWeek(_thisWeek, $token.tokensPerWeek[_thisWeek]);
             }
-            emit eventTokensPerWeek(_thisWeek, $token.tokensPerWeek[_thisWeek]);
             _t = _nextWeek;
             _thisWeek = _nextWeek;
             unchecked {
@@ -312,7 +313,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _toDistribute;
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(userAddress_);
-        uint256 _startTime = $.startTime;
+        uint256 _startTime = $token.startTime;
         uint256 _thisWeek = (block.timestamp / WEEK) * WEEK;
         uint256 _lastTokenTime = lastTokenTime_;
         uint256 _latestFeeUnlockTime = ((lastTokenTime_ + WEEK) / WEEK) * WEEK;
@@ -605,8 +606,8 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
         uint256 t = (startTime_ / WEEK) * WEEK;
         $token.lastTokenTime = t;
-        if ($.startTime == 0) {
-            $.startTime = t;
+        $token.startTime = t;
+        if ($.timeCursor == 0) {
             $.timeCursor = t;
         }
         $.tokens.push(tokenAddress_);
@@ -746,12 +747,13 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /**
      * @notice Returns the start time of the fee distribution.
+     * @param tokenAddress The address of the token.
      * @return uint256 The epoch time when fee distribution starts.
      * @dev This function returns the start time for the fee distribution process. This is the time from which the contract begins to calculate and distribute fees to token holders.
      */
-    function startTime() public view returns (uint256) {
+    function startTime(address tokenAddress) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.startTime;
+        return $.tokenData[tokenAddress].startTime;
     }
 
     /**
