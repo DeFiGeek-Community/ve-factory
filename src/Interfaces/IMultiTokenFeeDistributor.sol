@@ -68,5 +68,4 @@ interface IMultiTokenFeeDistributor {
     function tokensPerWeek(address tokenAddress, uint256 week) external view returns (uint256);
 
     function veSupply(uint256 week) external view returns (uint256);
-
 }
