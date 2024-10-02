@@ -577,6 +577,11 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _amount = IERC20(tokenAddress_).balanceOf(msg.sender);
         if (_amount > 0) {
             IERC20(tokenAddress_).transferFrom(msg.sender, address(this), _amount);
+
+            if (block.timestamp >= $.timeCursor) {
+                _checkpointTotalSupply();
+            }
+
             if ($.canCheckpointToken && block.timestamp > $token.lastTokenTime + 1 hours) {
                 _checkpointToken(tokenAddress_);
             }
