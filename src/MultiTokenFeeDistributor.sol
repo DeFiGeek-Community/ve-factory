@@ -744,13 +744,13 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /**
      * @notice Returns the start time of the fee distribution.
-     * @param tokenAddress The address of the token.
+     * @param tokenAddress_ The address of the token.
      * @return uint256 The epoch time when fee distribution starts.
      * @dev This function returns the start time for the fee distribution process. This is the time from which the contract begins to calculate and distribute fees to token holders.
      */
-    function startTime(address tokenAddress) public view returns (uint256) {
+    function startTime(address tokenAddress_) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.tokenData[tokenAddress].startTime;
+        return $.tokenData[tokenAddress_].startTime;
     }
 
     /**
@@ -774,22 +774,22 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /**
      * @notice Returns the last token time for a given token.
-     * @param tokenAddress The address of the token.
+     * @param tokenAddress_ The address of the token.
      * @return uint256 The last time the token was checkpointed.
      */
-    function lastTokenTime(address tokenAddress) public view returns (uint256) {
+    function lastTokenTime(address tokenAddress_) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.tokenData[tokenAddress].lastTokenTime;
+        return $.tokenData[tokenAddress_].lastTokenTime;
     }
 
     /**
      * @notice Returns the last known balance of a token before the last checkpoint.
-     * @param tokenAddress The address of the token.
+     * @param tokenAddress_ The address of the token.
      * @return uint256 The token balance at the last checkpoint.
      */
-    function tokenLastBalance(address tokenAddress) public view returns (uint256) {
+    function tokenLastBalance(address tokenAddress_) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.tokenData[tokenAddress].tokenLastBalance;
+        return $.tokenData[tokenAddress_].tokenLastBalance;
     }
 
     /**
@@ -853,35 +853,35 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
     /**
      * @notice Returns the time cursor for a given token and user.
-     * @param tokenAddress The address of the token.
+     * @param tokenAddress_ The address of the token.
      * @param user The address of the user.
      * @return uint256 The time cursor of the user for the specified token.
      */
-    function timeCursorOf(address tokenAddress, address user) public view returns (uint256) {
+    function timeCursorOf(address tokenAddress_, address user) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.tokenData[tokenAddress].timeCursorOf[user];
+        return $.tokenData[tokenAddress_].timeCursorOf[user];
     }
 
     /**
      * @notice Returns the user epoch of a given token and user.
-     * @param tokenAddress The address of the token.
+     * @param tokenAddress_ The address of the token.
      * @param user The address of the user.
      * @return uint256 The user epoch for the specified token and user.
      */
-    function userEpochOf(address tokenAddress, address user) public view returns (uint256) {
+    function userEpochOf(address tokenAddress_, address user) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.tokenData[tokenAddress].userEpochOf[user];
+        return $.tokenData[tokenAddress_].userEpochOf[user];
     }
 
     /**
      * @notice Returns the number of tokens distributed per week for a given token and week.
-     * @param tokenAddress The address of the token.
+     * @param tokenAddress_ The address of the token.
      * @param week The week number.
      * @return uint256 The number of tokens distributed for the specified week.
      */
-    function tokensPerWeek(address tokenAddress, uint256 week) public view returns (uint256) {
+    function tokensPerWeek(address tokenAddress_, uint256 week) public view returns (uint256) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        return $.tokenData[tokenAddress].tokensPerWeek[week];
+        return $.tokenData[tokenAddress_].tokensPerWeek[week];
     }
 
     /**

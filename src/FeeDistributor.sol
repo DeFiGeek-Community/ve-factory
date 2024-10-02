@@ -29,6 +29,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param admin_ Admin address
      * @param emergencyReturn_ Address to transfer `_token` balance to if this contract is killed
      */
+
     function initialize(
         address votingEscrow_,
         uint256 startTime_,
@@ -238,9 +239,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param _ve The address of the veToken contract.
      * @param _timestamp The timestamp to update veSupply for.
      */
-    function _updateVeSupply(FeeDistributorSchema.Storage storage $, address _ve, uint256 _timestamp)
-        internal
-    {
+    function _updateVeSupply(FeeDistributorSchema.Storage storage $, address _ve, uint256 _timestamp) internal {
         uint256 _epoch = _findTimestampEpoch(_ve, _timestamp);
         FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
         int128 _dt;
@@ -357,13 +356,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @return $ Reference to the storage.
      * @return _lastTokenTime The last token time.
      */
-    function _updateClaimState()
-        internal
-        returns (
-            FeeDistributorSchema.Storage storage $,
-            uint256 _lastTokenTime
-        )
-    {
+    function _updateClaimState() internal returns (FeeDistributorSchema.Storage storage $, uint256 _lastTokenTime) {
         $ = Storage.FeeDistributor();
 
         require(!$.isKilled, "Contract is killed");
@@ -421,9 +414,6 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         return _amount;
     }
-
-
-
 
     /**
      *

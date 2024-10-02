@@ -133,7 +133,11 @@ contract MultiTokenFeeDistributorCheckpointTokenTest is TestBase {
             uint256 tokensPerWeek = feeDistributor.tokensPerWeek(address(coinA), startTime + (i * WEEK));
             assertTrue(tokensPerWeek > 0, "Tokens per week should be greater than 0 after 20 weeks");
         }
-        assertEq(feeDistributor.tokensPerWeek(address(coinA), lastTokenTime), 0, "Tokens per week should be 0 at the last token time");
+        assertEq(
+            feeDistributor.tokensPerWeek(address(coinA), lastTokenTime),
+            0,
+            "Tokens per week should be 0 at the last token time"
+        );
 
         // veSupplyが正しく更新されたか確認
         for (uint256 i = 1; i < 20; ++i) {
@@ -168,7 +172,11 @@ contract MultiTokenFeeDistributorCheckpointTokenTest is TestBase {
             uint256 tokensPerWeek = feeDistributor.tokensPerWeek(address(coinA), lastTokenTime - (i * WEEK));
             assertTrue(tokensPerWeek == 0, "Tokens per week should be 0 after 21 weeks");
         }
-        assertEq(feeDistributor.tokensPerWeek(address(coinA), lastTokenTime), 0, "Tokens per week should be 0 at the last token time");
+        assertEq(
+            feeDistributor.tokensPerWeek(address(coinA), lastTokenTime),
+            0,
+            "Tokens per week should be 0 at the last token time"
+        );
 
         // veSupplyが正しく更新されたか確認
         for (uint256 i = 1; i < 20; ++i) {
@@ -192,7 +200,11 @@ contract MultiTokenFeeDistributorCheckpointTokenTest is TestBase {
         feeDistributor.checkpointToken(address(coinA));
 
         // lastTokenTimeが変更されていないことを確認
-        assertEq(feeDistributor.lastTokenTime(address(coinA)), initialLastTokenTime, "Last token time should not change without authorization");
+        assertEq(
+            feeDistributor.lastTokenTime(address(coinA)),
+            initialLastTokenTime,
+            "Last token time should not change without authorization"
+        );
 
         // 管理者がcheckpointTokenの許可を切り替える
         vm.prank(admin);
@@ -204,6 +216,9 @@ contract MultiTokenFeeDistributorCheckpointTokenTest is TestBase {
 
         // lastTokenTimeが更新されたことを確認
         uint256 updatedLastTokenTime = feeDistributor.lastTokenTime(address(coinA));
-        assertTrue(updatedLastTokenTime > initialLastTokenTime, "Last token time should be updated after checkpointToken is called");
+        assertTrue(
+            updatedLastTokenTime > initialLastTokenTime,
+            "Last token time should be updated after checkpointToken is called"
+        );
     }
 }

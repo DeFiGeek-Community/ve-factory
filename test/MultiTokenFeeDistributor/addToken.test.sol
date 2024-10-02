@@ -76,10 +76,14 @@ contract MultiTokenFeeDistributorAddTokenTest is Test {
 
         // tokenAのlastTokenTimeとstartTimeが正しく設定されているか確認
         assertEq(
-            distributor.lastTokenTime(address(tokenA)), expectedStartTime, "Last token time for token A should be aligned to the week start"
+            distributor.lastTokenTime(address(tokenA)),
+            expectedStartTime,
+            "Last token time for token A should be aligned to the week start"
         );
         assertEq(
-            distributor.startTime(address(tokenA)), expectedStartTime, "Start time for token A should be aligned to the week start"
+            distributor.startTime(address(tokenA)),
+            expectedStartTime,
+            "Start time for token A should be aligned to the week start"
         );
 
         // timeCursorが正しく設定されているか確認
@@ -93,10 +97,14 @@ contract MultiTokenFeeDistributorAddTokenTest is Test {
 
         // tokenBのlastTokenTimeとstartTimeが正しく設定されているか確認
         assertEq(
-            distributor.lastTokenTime(address(tokenB)), expectedStartTime2, "Last token time for token B should be aligned to the week start"
+            distributor.lastTokenTime(address(tokenB)),
+            expectedStartTime2,
+            "Last token time for token B should be aligned to the week start"
         );
         assertEq(
-            distributor.startTime(address(tokenB)), expectedStartTime2, "Start time for token B should be aligned to the week start"
+            distributor.startTime(address(tokenB)),
+            expectedStartTime2,
+            "Start time for token B should be aligned to the week start"
         );
     }
 }
