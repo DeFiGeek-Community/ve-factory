@@ -22,6 +22,8 @@ contract MultiTokenFeeDistributorAddTokenTest is Test {
         tokenB = new SampleToken(1e26);
 
         distributor.initialize(address(this), admin, emergencyReturn);
+
+        vm.warp(100 weeks);
     }
 
     function testAddToken() public {
@@ -36,7 +38,9 @@ contract MultiTokenFeeDistributorAddTokenTest is Test {
 
         // `startTime`と`timeCursor`が正しく設定されているか確認
         uint256 expectedStartTime = (startTime / WEEK) * WEEK;
-        assertEq(distributor.startTime(), expectedStartTime, "Start time should be aligned to the week start");
+        assertEq(
+            distributor.startTime(address(tokenA)), expectedStartTime, "Start time should be aligned to the week start"
+        );
         assertEq(distributor.timeCursor(), expectedStartTime, "Time cursor should be aligned to the week start");
     }
 
@@ -54,16 +58,45 @@ contract MultiTokenFeeDistributorAddTokenTest is Test {
 
     function testAddMultipleTokens() public {
         uint256 startTime = block.timestamp;
-        // 複数トークンを追加
+        uint256 startTime3 = startTime + 3 weeks;
+
+        // tokenAを追加
         vm.prank(admin);
         distributor.addToken(address(tokenA), startTime);
-        vm.prank(admin);
-        distributor.addToken(address(tokenB), startTime);
 
-        // 両方のトークンが正しく追加されたかを確認
+        // 3週間後にtokenBを追加
+        vm.prank(admin);
+        distributor.addToken(address(tokenB), startTime3);
+
+        uint256 expectedStartTime = (startTime / WEEK) * WEEK;
+
+        // tokenAが正しく追加されたかを確認
         bool isTokenAPresent = distributor.isTokenPresent(address(tokenA));
-        bool isTokenBPresent = distributor.isTokenPresent(address(tokenB));
         assertTrue(isTokenAPresent, "Token A should be added");
+
+        // tokenAのlastTokenTimeとstartTimeが正しく設定されているか確認
+        assertEq(
+            distributor.lastTokenTime(address(tokenA)), expectedStartTime, "Last token time for token A should be aligned to the week start"
+        );
+        assertEq(
+            distributor.startTime(address(tokenA)), expectedStartTime, "Start time for token A should be aligned to the week start"
+        );
+
+        // timeCursorが正しく設定されているか確認
+        assertEq(distributor.timeCursor(), expectedStartTime, "Time cursor should be aligned to the week start");
+
+        // tokenBが正しく追加されたかを確認
+        bool isTokenBPresent = distributor.isTokenPresent(address(tokenB));
         assertTrue(isTokenBPresent, "Token B should be added");
+
+        uint256 expectedStartTime2 = (startTime3 / WEEK) * WEEK;
+
+        // tokenBのlastTokenTimeとstartTimeが正しく設定されているか確認
+        assertEq(
+            distributor.lastTokenTime(address(tokenB)), expectedStartTime2, "Last token time for token B should be aligned to the week start"
+        );
+        assertEq(
+            distributor.startTime(address(tokenB)), expectedStartTime2, "Start time for token B should be aligned to the week start"
+        );
     }
 }
