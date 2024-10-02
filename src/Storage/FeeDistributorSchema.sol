@@ -7,6 +7,7 @@ library FeeDistributorSchema {
         // 基本的な設定と状態
         uint256 startTime;
         uint256 timeCursor;
+        uint256 lastCheckpointTotalSupplyTime;
         uint256 lastTokenTime;
         uint256 totalReceived;
         uint256 tokenLastBalance;
