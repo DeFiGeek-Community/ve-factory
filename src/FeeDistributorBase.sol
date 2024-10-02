@@ -204,37 +204,7 @@ contract FeeDistributorBase is Initializable, ReentrancyGuardUpgradeable {
      * @dev The checkpoint is also updated by the first claimant each new epoch week. This function may be called independently of a claim, to reduce claiming gas costs.
      */
     function checkpointTotalSupply() external {
-        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
-        address _ve = $.votingEscrow;
-        uint256 _t = $.timeCursor;
-        uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
-        IVeToken(_ve).checkpoint();
-
-        for (uint256 i; i < 20;) {
-            if (_t > _roundedTimestamp) {
-                break;
-            } else {
-                uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
-                uint256 _dt;
-                if (_t > _pt.ts) {
-                    _dt = uint256(int256(_t) - int256(_pt.ts));
-                }
-
-                int128 _balance = _pt.bias - _pt.slope * int128(int256(_dt));
-                if (_balance < 0) {
-                    $.veSupply[_t] = 0;
-                } else {
-                    $.veSupply[_t] = uint256(uint128(_balance));
-                }
-            }
-            _t += WEEK;
-            unchecked {
-                ++i;
-            }
-        }
-
-        $.timeCursor = _t;
+        _checkpointTotalSupply();
     }
 
     function _claim(address addr_, address ve_, uint256 lastTokenTime_) internal returns (uint256) {
