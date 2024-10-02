@@ -109,6 +109,11 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             msg.sender == $.admin || ($.canCheckpointToken && block.timestamp > $.lastTokenTime + 1 hours),
             "Unauthorized"
         );
+
+        if (block.timestamp >= $.timeCursor) {
+            _checkpointTotalSupply();
+        }
+
         _checkpointToken();
     }
 
@@ -188,33 +193,62 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         IVeToken(_ve).checkpoint();
 
         uint256 _sinceLastInWeeks;
-        unchecked {
-            _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
+        if (_t > 0) {
+            unchecked {
+                _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
+            }
         }
+        /*
+        If the time since the last checkpoint exceeds 20 weeks,
+        set the checkpoint time to the beginning of the week that is 19 weeks prior to the current block time.
+        */
         if (_sinceLastInWeeks >= 20) {
-            _t = (_roundedTimestamp - WEEK * 20);
+            _t = (_roundedTimestamp - WEEK * 19);
         }
 
-        for (uint256 i; i < 21;) {
+        /*
+        If the last checkpoint total supply time is the previous week,
+        update the veSupply to ensure it reflects the latest state.
+        This prevents a scenario where checkpointTotalSupply and veToken's createLock
+        occur in the same block, potentially causing veSupply to not be updated with the latest value.
+        */
+        uint256 _previousWeek = $.timeCursor - WEEK;
+        if ($.lastCheckpointTotalSupplyTime == _previousWeek) {
+            _updateVeSupply($, _ve, _previousWeek);
+        }
+
+        for (uint256 i; i < 20;) {
             if (_t > _roundedTimestamp) {
                 break;
             } else {
-                uint256 _epoch = _findTimestampEpoch(_ve, _t);
-                FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
-                int128 _dt;
-                if (_t > _pt.ts) {
-                    _dt = int128(int256(_t) - int256(_pt.ts));
-                }
-                $.veSupply[_t] = uint256(int256(_pt.bias - _pt.slope * _dt));
-                emit eventVeSupply(_t, $.veSupply[_t]);
+                _updateVeSupply($, _ve, _t);
                 _t += WEEK;
             }
             unchecked {
                 ++i;
             }
         }
-
+        $.lastCheckpointTotalSupplyTime = block.timestamp;
         $.timeCursor = _t;
+    }
+
+    /**
+     * @notice Internal function to update veSupply for a given timestamp.
+     * @param $ Reference to the storage.
+     * @param _ve The address of the veToken contract.
+     * @param _timestamp The timestamp to update veSupply for.
+     */
+    function _updateVeSupply(FeeDistributorSchema.Storage storage $, address _ve, uint256 _timestamp)
+        internal
+    {
+        uint256 _epoch = _findTimestampEpoch(_ve, _timestamp);
+        FeeDistributorSchema.Point memory _pt = IVeToken(_ve).pointHistory(_epoch);
+        int128 _dt;
+        if (_timestamp > _pt.ts) {
+            _dt = int128(int256(_timestamp) - int256(_pt.ts));
+        }
+        $.veSupply[_timestamp] = uint256(int256(_pt.bias - _pt.slope * _dt));
+        emit eventVeSupply(_timestamp, $.veSupply[_timestamp]);
     }
 
     /**
@@ -235,7 +269,6 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         uint256 _maxUserEpoch = IVeToken(ve_).userPointEpoch(addr_);
         uint256 _startTime = $.startTime;
-        uint256 _lastTokenTime = lastTokenTime_;
 
         if (_maxUserEpoch == 0) {
             // No lock = no fees
@@ -260,7 +293,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             _weekCursor = ((_userPoint.ts + WEEK - 1) / WEEK) * WEEK;
         }
 
-        if (_weekCursor >= _lastTokenTime) {
+        if (_weekCursor >= lastTokenTime_) {
             return 0;
         }
 
@@ -272,7 +305,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         // Iterate over weeks
         for (uint256 i; i < 50;) {
-            if (_weekCursor >= _lastTokenTime) {
+            if (_weekCursor >= lastTokenTime_) {
                 break;
             } else if (_weekCursor >= _userPoint.ts && _userEpoch <= _maxUserEpoch) {
                 ++_userEpoch;
@@ -320,6 +353,38 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     }
 
     /**
+     * @notice Internal function to perform common checks and state updates before claims.
+     * @return $ Reference to the storage.
+     * @return _lastTokenTime The last token time.
+     */
+    function _updateClaimState()
+        internal
+        returns (
+            FeeDistributorSchema.Storage storage $,
+            uint256 _lastTokenTime
+        )
+    {
+        $ = Storage.FeeDistributor();
+
+        require(!$.isKilled, "Contract is killed");
+
+        if (block.timestamp >= $.timeCursor) {
+            _checkpointTotalSupply();
+        }
+
+        _lastTokenTime = $.lastTokenTime;
+
+        if ($.canCheckpointToken && (block.timestamp > _lastTokenTime + 1 hours)) {
+            _checkpointToken();
+            _lastTokenTime = block.timestamp;
+        }
+
+        unchecked {
+            _lastTokenTime = (_lastTokenTime / WEEK) * WEEK;
+        }
+    }
+
+    /**
      *
      * @notice Claim fees for `msg.sender`
      * @dev Each call to claim look at a maximum of 50 user veToken points.
@@ -356,6 +421,9 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         return _amount;
     }
+
+
+
 
     /**
      *
@@ -463,6 +531,11 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _amount = IERC20($.token).balanceOf(msg.sender);
         if (_amount > 0) {
             IERC20($.token).transferFrom(msg.sender, address(this), _amount);
+
+            if (block.timestamp >= $.timeCursor) {
+                _checkpointTotalSupply();
+            }
+
             if ($.canCheckpointToken && block.timestamp > $.lastTokenTime + 1 hours) {
                 _checkpointToken();
             }
@@ -555,6 +628,11 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function timeCursor() public view returns (uint256) {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         return $.timeCursor;
+    }
+
+    function lastCheckpointTotalSupplyTime() public view returns (uint256) {
+        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
+        return $.lastCheckpointTotalSupplyTime;
     }
 
     function lastTokenTime() public view returns (uint256) {
