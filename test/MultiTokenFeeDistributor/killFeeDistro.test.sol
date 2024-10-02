@@ -2,19 +2,19 @@
 pragma solidity ^0.8.24;
 
 import "test/util/TestBase.sol";
-import "src/FeeDistributor.sol";
-import "src/Interfaces/IFeeDistributor.sol";
+import "src/MultiTokenFeeDistributor.sol";
+import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorKillFeeDistroTest is TestBase {
+contract MultiTokenFeeDistributorKillFeeDistroTest is TestBase {
     address alice;
     address bob;
     address charlie;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
 
-    FeeDistributor distributor;
+    MultiTokenFeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -28,17 +28,21 @@ contract FeeDistributorKillFeeDistroTest is TestBase {
         coinA = new SampleToken(1e26);
         coinA.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new FeeDistributor();
+        distributor = new MultiTokenFeeDistributor();
 
-        _use(FeeDistributor.initialize.selector, address(distributor));
-        _use(FeeDistributor.isKilled.selector, address(distributor));
-        _use(FeeDistributor.killMe.selector, address(distributor));
-        _use(FeeDistributor.claim.selector, address(distributor));
-        _use(FeeDistributor.claimFor.selector, address(distributor));
-        _use(FeeDistributor.claimMany.selector, address(distributor));
-        _use(FeeDistributor.emergencyReturn.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.isKilled.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.emergencyReturn.selector, address(distributor));
 
-        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
+        feeDistributor.initialize(address(veToken), alice, bob);
+        vm.prank(alice);
+
+        feeDistributor.addToken(address(coinA), block.timestamp);
     }
 
     function testAssumptions() public view {
@@ -87,7 +91,7 @@ contract FeeDistributorKillFeeDistroTest is TestBase {
         feeDistributor.killMe();
         vm.expectRevert();
         vm.prank(bob);
-        feeDistributor.claim();
+        feeDistributor.claim(address(coinA));
     }
 
     function testCannotClaimForAfterKilled() public {
@@ -95,7 +99,7 @@ contract FeeDistributorKillFeeDistroTest is TestBase {
         feeDistributor.killMe();
         vm.expectRevert();
         vm.prank(bob);
-        feeDistributor.claimFor(alice);
+        feeDistributor.claimFor(alice, address(coinA));
     }
 
     function testCannotClaimManyAfterKilled() public {
@@ -107,6 +111,6 @@ contract FeeDistributorKillFeeDistroTest is TestBase {
         feeDistributor.killMe();
         vm.expectRevert();
         vm.prank(bob);
-        feeDistributor.claimMany(claimants);
+        feeDistributor.claimMany(claimants, address(coinA));
     }
 }
