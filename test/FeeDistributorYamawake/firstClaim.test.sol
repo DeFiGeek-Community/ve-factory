@@ -21,12 +21,14 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
     VeToken veToken;
     SampleToken rewardToken1;
     SampleToken rewardToken2;
+    SampleToken rewardToken3;
     SampleToken stakeToken;
 
     function setUp() public {
         // トークンの初期化
         rewardToken1 = new SampleToken(1e26);
         rewardToken2 = new SampleToken(1e26);
+        rewardToken3 = new SampleToken(1e26);
         stakeToken = new SampleToken(1e26);
 
         // veTokenの初期化
@@ -107,5 +109,36 @@ contract FeeDistributorYamawakeFirstClaimTest is Test {
         // ユーザー2が請求
         vm.prank(user2);
         distributor.claim(address(rewardToken1));
+    }
+
+    function testClaim3() public {
+        vm.warp(distributor.startTime() + 156 weeks); // 3 years
+
+        vm.prank(admin);
+        distributor.addRewardToken(address(rewardToken3));
+
+        // ユーザー2がトークンをロック
+        stakeToken.transfer(user2, 1e18);
+        vm.prank(user2);
+        stakeToken.approve(address(veToken), 1e18);
+        vm.prank(user2);
+        veToken.createLock(1e18, block.timestamp + 100 * WEEK);
+
+        // トークンをFeeDistributorに転送
+        rewardToken3.transfer(address(distributor), 1e18);
+
+        // ユーザー2が請求
+        vm.prank(user2);
+        distributor.claim(address(rewardToken3));
+        vm.prank(user2);
+        distributor.claim(address(rewardToken3));
+        vm.prank(user2);
+        distributor.claim(address(rewardToken3));
+        vm.prank(user2);
+        distributor.claim(address(rewardToken3));
+        vm.prank(user2);
+        distributor.claim(address(rewardToken3));
+        vm.prank(user2);
+        distributor.claim(address(rewardToken3));
     }
 }
