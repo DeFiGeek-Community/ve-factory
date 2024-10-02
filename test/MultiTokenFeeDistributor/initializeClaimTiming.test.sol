@@ -2,12 +2,12 @@
 pragma solidity ^0.8.24;
 
 import "test/util/TestBase.sol";
-import "src/FeeDistributorBase.sol";
-import "src/Interfaces/IFeeDistributor.sol";
+import "src/MultiTokenFeeDistributor.sol";
+import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorWithToggleCheckpointTest is TestBase {
+contract MultiTokenFeeDistributorInitializeClaimTimingTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
@@ -15,9 +15,9 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
     address bob;
     address charlie;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
 
-    FeeDistributorBase distributor;
+    MultiTokenFeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -37,20 +37,21 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         token.approve(address(veToken), type(uint256).max);
         vm.prank(charlie);
         token.approve(address(veToken), type(uint256).max);
-        distributor = new FeeDistributorBase();
+        distributor = new MultiTokenFeeDistributor();
 
-        _use(FeeDistributorBase.initialize.selector, address(distributor));
-        _use(FeeDistributorBase.checkpointToken.selector, address(distributor));
-        _use(FeeDistributorBase.checkpointTotalSupply.selector, address(distributor));
-        _use(FeeDistributorBase.claim.selector, address(distributor));
-        _use(FeeDistributorBase.claimFor.selector, address(distributor));
-        _use(FeeDistributorBase.claimMany.selector, address(distributor));
-        _use(FeeDistributorBase.tokensPerWeek.selector, address(distributor));
-        _use(FeeDistributorBase.toggleAllowCheckpointToken.selector, address(distributor));
-        _use(FeeDistributorBase.startTime.selector, address(distributor));
-        _use(FeeDistributorBase.lastTokenTime.selector, address(distributor));
-        _use(FeeDistributorBase.timeCursor.selector, address(distributor));
-        _use(FeeDistributorBase.canCheckpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.startTime.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.canCheckpointToken.selector, address(distributor));
 
         vm.warp(WEEK * 1000);
     }
@@ -66,8 +67,12 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         return int256(x);
     }
 
-    function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.initialize(address(veToken), time, address(coinA), address(this), bob);
+    function feeDistributorInitialize(uint256 time, address[] memory tokens) internal {
+        feeDistributor.initialize(address(veToken), address(this), bob);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            feeDistributor.addToken(tokens[i], time);
+        }
+        feeDistributor.toggleAllowCheckpointToken();
     }
 
     function testClaimAfterTokenDeposit() public {
@@ -75,10 +80,11 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
 
-        feeDistributorInitialize(block.timestamp);
-        feeDistributor.toggleAllowCheckpointToken();
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(coinA);
+        feeDistributorInitialize(block.timestamp, tokens);
         assertTrue(feeDistributor.canCheckpointToken());
-        vm.warp(feeDistributor.lastTokenTime());
+        vm.warp(feeDistributor.lastTokenTime(address(coinA)));
 
         uint256 amount = 1000 * 1e18;
 
@@ -90,10 +96,10 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         veToken.createLock(amount, block.timestamp + 3 * WEEK);
         vm.warp(block.timestamp + 2 * WEEK);
 
-        feeDistributor.claimFor(alice);
+        feeDistributor.claimFor(alice, address(coinA));
         uint256 balanceBefore = coinA.balanceOf(alice);
 
-        feeDistributor.claimFor(alice);
+        feeDistributor.claimFor(alice, address(coinA));
         uint256 balanceAfter = coinA.balanceOf(alice);
 
         assertEq(balanceAfter - balanceBefore, 0);
@@ -110,9 +116,10 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         veToken.createLock(amount, block.timestamp + 30 * WEEK);
         vm.warp(block.timestamp + WEEK);
 
-        feeDistributorInitialize(block.timestamp);
-        feeDistributor.toggleAllowCheckpointToken();
-        vm.warp(feeDistributor.lastTokenTime());
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(coinA);
+        feeDistributorInitialize(block.timestamp, tokens);
+        vm.warp(feeDistributor.lastTokenTime(address(coinA)));
         for (uint256 i = 0; i < 3; i++) {
             for (uint256 j = 0; j < 7; j++) {
                 vm.prank(bob);
@@ -123,7 +130,7 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
 
         vm.warp(block.timestamp + WEEK * 10);
         vm.prank(alice);
-        feeDistributor.claimFor(alice);
+        feeDistributor.claimFor(alice, address(coinA));
         coinA.balanceOf(address(this));
 
         assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - safeToInt256(21 * 1e18)) < 1000);
@@ -139,13 +146,15 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         vm.warp(block.timestamp + WEEK);
         uint256 startTime = block.timestamp;
         vm.warp(block.timestamp + WEEK * 5);
-        feeDistributorInitialize(startTime);
-        feeDistributor.toggleAllowCheckpointToken();
+
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(coinA);
+        feeDistributorInitialize(startTime, tokens);
 
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 1e19);
-        vm.warp(block.timestamp + WEEK);
-        feeDistributor.claimFor(alice);
+        vm.warp(block.timestamp + WEEK * 2);
+        feeDistributor.claimFor(alice, address(coinA));
 
         assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - 1e19) < 1000);
     }
@@ -168,13 +177,14 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         veToken.createLock(amount, block.timestamp + 10 * WEEK);
         vm.warp(block.timestamp + WEEK * 2);
 
-        feeDistributorInitialize(startTime);
-        feeDistributor.toggleAllowCheckpointToken();
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(coinA);
+        feeDistributorInitialize(startTime, tokens);
 
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 10 ** 19);
-        vm.warp(block.timestamp + WEEK);
-        feeDistributor.claimFor(alice);
+        vm.warp(block.timestamp + WEEK * 2);
+        feeDistributor.claimFor(alice, address(coinA));
 
         assertTrue(abs(10 ** 19 - safeToInt256(coinA.balanceOf(alice))) < 1000);
     }
@@ -195,16 +205,17 @@ contract FeeDistributorWithToggleCheckpointTest is TestBase {
         uint256 startTime = block.timestamp;
         vm.warp(block.timestamp + WEEK * 5);
 
-        feeDistributorInitialize(startTime);
-        feeDistributor.toggleAllowCheckpointToken();
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(coinA);
+        feeDistributorInitialize(startTime, tokens);
 
         vm.prank(charlie);
         coinA.transfer(address(feeDistributor), 1e19);
-        feeDistributor.checkpointToken();
+        feeDistributor.checkpointToken(address(coinA));
         vm.warp(block.timestamp + WEEK);
-        feeDistributor.checkpointToken();
-        feeDistributor.claimFor(alice);
-        feeDistributor.claimFor(bob);
+        feeDistributor.checkpointToken(address(coinA));
+        feeDistributor.claimFor(alice, address(coinA));
+        feeDistributor.claimFor(bob, address(coinA));
 
         int256 balanceAlice = safeToInt256(coinA.balanceOf(alice));
         int256 balanceBob = safeToInt256(coinA.balanceOf(bob));
