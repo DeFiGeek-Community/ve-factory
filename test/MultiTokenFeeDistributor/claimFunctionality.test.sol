@@ -6,6 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import {console} from "forge-std/console.sol";
 
 contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
     uint256 constant DAY = 86400;
@@ -52,6 +53,8 @@ contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
         _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
         _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
         _use(MultiTokenFeeDistributor.canCheckpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
 
         feeDistributor.initialize(address(veToken), address(this), bob);
         vm.warp(WEEK * 1000);
@@ -225,5 +228,46 @@ contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
             // 各ユーザーが正しい量のトークンをclaimできたことを確認
             assertTrue(abs(safeToInt256(claimedAmount) - 1e18) < 20);
         }
+    }
+
+    function testClaimAfterLongPeriod() public {
+        vm.prank(bob);
+        coinA = new SampleToken(1e20);
+
+        uint256 amount = 1000 * 1e18;
+
+        // Aliceがトークンをロック
+        vm.prank(alice);
+        veToken.createLock(amount, block.timestamp + 100 * WEEK);
+
+        // トークンをFeeDistributorに転送
+        vm.prank(bob);
+        coinA.transfer(address(feeDistributor), 1e18);
+
+        // FeeDistributorを初期化
+        uint256 startTime = block.timestamp + WEEK * 2;
+        feeDistributorInitialize(startTime);
+        feeDistributor.toggleAllowCheckpointToken();
+
+        // 30週間以上時間を進める
+        vm.warp(block.timestamp + 30 * WEEK);
+
+        // Aliceが請求を行い、トークンの残高を確認する
+        vm.prank(alice);
+        feeDistributor.claim(address(coinA));
+        uint256 balanceAfterClaim = coinA.balanceOf(alice);
+
+        // veSupplyの値を確認
+        for (uint256 i = 0; i <= 30; i++) {
+            uint256 week = startTime + (i * WEEK);
+            uint256 veSupply = feeDistributor.veSupply(week);
+            uint256 tokensPerWeek = feeDistributor.tokensPerWeek(address(coinA), week);
+            console.log(week);
+            console.log(veSupply);
+            console.log(tokensPerWeek);
+        }
+
+        // 請求後のトークン残高が正しいことを確認
+        assertTrue(balanceAfterClaim > 0, "Alice should have received tokens after long period");
     }
 }
