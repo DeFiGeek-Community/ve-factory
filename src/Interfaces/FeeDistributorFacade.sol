@@ -40,9 +40,9 @@ contract FeeDistributorFacade {
 
     function timeCursor() external view returns (uint256) {}
 
-    function lastTokenTime() external view returns (uint256) {}
+    function lastCheckpointTotalSupplyTime() external view returns (uint256) {}
 
-    function totalReceived() external view returns (uint256) {}
+    function lastTokenTime() external view returns (uint256) {}
 
     function tokenLastBalance() external view returns (uint256) {}
 
