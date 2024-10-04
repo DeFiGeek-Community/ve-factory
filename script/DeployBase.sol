@@ -29,4 +29,25 @@ contract DeployBase is Script {
         string memory addressStr = vm.readFile(path);
         return vm.parseAddress(addressStr);
     }
+
+    function addTimestampToFileName(string memory fileName) internal view returns (string memory) {
+        // 現在のタイムスタンプを取得し、文字列に変換
+        string memory timestamp = vm.toString(block.timestamp);
+        // ファイル名にタイムスタンプを追加
+        return string(abi.encodePacked(fileName, "_", timestamp));
+    }
+
+    // 環境変数からuint256を読み込む関数
+    function getEnvUint(string memory key) internal view returns (uint256) {
+        uint256 value = vm.envUint(key);
+        require(value != 0, string(abi.encodePacked(key, " is not set")));
+        return value;
+    }
+
+    // 環境変数からaddressを読み込む関数
+    function getEnvAddress(string memory key) internal view returns (address) {
+        address value = vm.envAddress(key);
+        require(value != address(0), string(abi.encodePacked(key, " is not set")));
+        return value;
+    }
 }
