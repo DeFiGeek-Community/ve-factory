@@ -3,8 +3,10 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "src/MultiTokenFeeDistributor.sol";
+import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
 contract MultiTokenFeeDistributorFirstClaimTest is Test {
     uint256 constant DAY = 86400;
@@ -18,7 +20,7 @@ contract MultiTokenFeeDistributorFirstClaimTest is Test {
     address user1 = address(0x3);
     address user2 = address(0x4);
 
-    MultiTokenFeeDistributor distributor;
+    IMultiTokenFeeDistributor distributor;
     VeToken veToken;
     SampleToken rewardToken1;
     SampleToken rewardToken2;
@@ -39,8 +41,11 @@ contract MultiTokenFeeDistributorFirstClaimTest is Test {
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
         // Initialize the distributor with the veToken
-        distributor = new MultiTokenFeeDistributor();
-        distributor.initialize(address(veToken), admin, emergencyReturn);
+        // distributor = new MultiTokenFeeDistributor();
+        // distributor.initialize(address(veToken), admin, emergencyReturn);
+        DeployMultiTokenFeeDistributor deployer = new DeployMultiTokenFeeDistributor();
+        (address proxyAddress,) = deployer.deploy(address(veToken), admin, emergencyReturn, false);
+        distributor = IMultiTokenFeeDistributor(proxyAddress);
 
         // Lock user tokens in veToken
         createTime = block.timestamp + 100 * WEEK;
