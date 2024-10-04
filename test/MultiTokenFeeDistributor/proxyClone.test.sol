@@ -49,7 +49,8 @@ contract CloneMultiTokenFeeDistributorTest is Test {
         veToken.createLock(amount, createTime);
 
         deployScript = new DeployMultiTokenFeeDistributor();
-        (address proxyAddress, address dictionaryAddress) = deployScript.deploy(address(veToken), admin, emergencyReturn, false);
+        (address proxyAddress, address dictionaryAddress) =
+            deployScript.deploy(address(veToken), admin, emergencyReturn, false);
         dictionary = dictionaryAddress;
         distributor = IMultiTokenFeeDistributor(proxyAddress);
 
@@ -72,12 +73,8 @@ contract CloneMultiTokenFeeDistributorTest is Test {
         vm.prank(user1);
         uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
 
-        assertApproxEqAbs(
-            claimedAmount1, 1e18, 1e4
-        );
-        assertApproxEqAbs(
-            claimedAmount2, 1e18, 1e4
-        );
+        assertApproxEqAbs(claimedAmount1, 1e18, 1e4);
+        assertApproxEqAbs(claimedAmount2, 1e18, 1e4);
 
         assertEq(distributor.votingEscrow(), address(veToken));
         assertEq(distributor.isTokenPresent(address(rewardToken1)), true);
