@@ -189,7 +189,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function _checkpointTotalSupply() internal {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         address _ve = $.votingEscrow;
-        uint256 _t = $.timeCursor - WEEK;
+        uint256 _t = $.timeCursor;
         uint256 _roundedTimestamp = (block.timestamp / WEEK) * WEEK;
         IVeToken(_ve).checkpoint();
 
@@ -628,11 +628,6 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function lastTokenTime() public view returns (uint256) {
         FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
         return $.lastTokenTime;
-    }
-
-    function totalReceived() public view returns (uint256) {
-        FeeDistributorSchema.Storage storage $ = Storage.FeeDistributor();
-        return $.totalReceived;
     }
 
     function tokenLastBalance() public view returns (uint256) {
