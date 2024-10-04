@@ -87,6 +87,7 @@ contract CloneMultiTokenFeeDistributorTest is Test {
         assertNotEq(distributor.lastTokenTime(address(rewardToken2)), 0);
         assertNotEq(distributor.timeCursor(), 0, "timeCursor should not be zero");
 
+        //  ２つ目のproxyをデプロイし、cloneをする。
         address distributor2Address = cloneScript.clone(dictionary, address(veToken), user1, user2, false);
         distributor2 = IMultiTokenFeeDistributor(distributor2Address);
 
