@@ -29,7 +29,7 @@ contract DeployMultiTokenFeeDistributor is DeployBase {
 
     function deploy(address votingEscrow, address admin, address emergencyReturn, bool output)
         public
-        returns (address, address) 
+        returns (address, address)
     {
         bytes memory initializerData =
             abi.encodeCall(MultiTokenFeeDistributor.initialize, (votingEscrow, admin, emergencyReturn));
