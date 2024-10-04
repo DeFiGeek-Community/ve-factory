@@ -11,23 +11,12 @@ contract DeployFeeDistributor is DeployBase {
     using UcsDeployLibrary for address;
 
     function run() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        require(deployerPrivateKey != 0, "PRIVATE_KEY is not set");
-
-        address votingEscrow = vm.envAddress("VOTING_ESCROW");
-        require(votingEscrow != address(0), "VOTING_ESCROW is not set");
-
-        uint256 startTime = vm.envUint("START_TIME");
-        require(startTime != 0, "START_TIME is not set");
-
-        address token = vm.envAddress("TOKEN");
-        require(token != address(0), "TOKEN is not set");
-
-        address admin = vm.envAddress("ADMIN");
-        require(admin != address(0), "ADMIN is not set");
-
-        address emergencyReturn = vm.envAddress("EMERGENCY_RETURN");
-        require(emergencyReturn != address(0), "EMERGENCY_RETURN is not set");
+        uint256 deployerPrivateKey = getEnvUint("PRIVATE_KEY");
+        address votingEscrow = getEnvAddress("VOTING_ESCROW");
+        uint256 startTime = getEnvUint("START_TIME");
+        address token = getEnvAddress("TOKEN");
+        address admin = getEnvAddress("ADMIN");
+        address emergencyReturn = getEnvAddress("EMERGENCY_RETURN");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -55,8 +44,8 @@ contract DeployFeeDistributor is DeployBase {
         dictionary.use(FeeDistributor.checkpointToken.selector, address(distributor));
         dictionary.use(FeeDistributor.veForAt.selector, address(distributor));
         dictionary.use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
-        dictionary.use(bytes4(keccak256("claim()")), address(distributor));
-        dictionary.use(bytes4(keccak256("claim(address)")), address(distributor));
+        dictionary.use(FeeDistributor.claim.selector, address(distributor));
+        dictionary.use(FeeDistributor.claimFor.selector, address(distributor));
         dictionary.use(FeeDistributor.claimMany.selector, address(distributor));
         dictionary.use(FeeDistributor.burn.selector, address(distributor));
         dictionary.use(FeeDistributor.commitAdmin.selector, address(distributor));
@@ -66,8 +55,8 @@ contract DeployFeeDistributor is DeployBase {
         dictionary.use(FeeDistributor.recoverBalance.selector, address(distributor));
         dictionary.use(FeeDistributor.startTime.selector, address(distributor));
         dictionary.use(FeeDistributor.timeCursor.selector, address(distributor));
+        dictionary.use(FeeDistributor.lastCheckpointTotalSupplyTime.selector, address(distributor));
         dictionary.use(FeeDistributor.lastTokenTime.selector, address(distributor));
-        dictionary.use(FeeDistributor.totalReceived.selector, address(distributor));
         dictionary.use(FeeDistributor.tokenLastBalance.selector, address(distributor));
         dictionary.use(FeeDistributor.canCheckpointToken.selector, address(distributor));
         dictionary.use(FeeDistributor.isKilled.selector, address(distributor));
@@ -83,9 +72,9 @@ contract DeployFeeDistributor is DeployBase {
         dictionary.useFacade(address(new FeeDistributorFacade()));
 
         address proxyAddress = dictionary.deployProxy(initializerData);
-        writeDeployedAddress(address(distributor), "FeeDistributor_Proxy");
+        writeDeployedAddress(proxyAddress, "FeeDistributor_Proxy");
 
-        console.log("Deployed VeFactory proxy at:", proxyAddress);
+        console.log("Deployed FeeDistributor proxy at:", proxyAddress);
         return proxyAddress;
     }
 }
