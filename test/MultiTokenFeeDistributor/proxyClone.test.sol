@@ -94,9 +94,9 @@ contract CloneMultiTokenFeeDistributorTest is Test {
         distributor2 = IMultiTokenFeeDistributor(distributor2Address);
 
         vm.startPrank(user1);
-        distributor.addToken(address(rewardToken3), block.timestamp);
-        distributor.addToken(address(rewardToken4), block.timestamp);
-        distributor.toggleAllowCheckpointToken();
+        distributor2.addToken(address(rewardToken3), block.timestamp);
+        distributor2.addToken(address(rewardToken4), block.timestamp);
+        distributor2.toggleAllowCheckpointToken();
         vm.stopPrank();
 
         assertEq(distributor2.votingEscrow(), address(veToken));
