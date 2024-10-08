@@ -65,7 +65,7 @@ contract FeeDistributor_CheckpointTest is TestBase {
 
     function testAdvanceTimeCursor() public {
         uint256 startTime = feeDistributor.timeCursor();
-        vm.warp(block.timestamp + YEAR);
+        vm.warp(startTime + 20 * WEEK);
         feeDistributor.checkpointTotalSupply();
         uint256 newTimeCursor = feeDistributor.timeCursor();
 
@@ -73,6 +73,7 @@ contract FeeDistributor_CheckpointTest is TestBase {
         assertTrue(feeDistributor.veSupply(startTime + WEEK * 19) > 0);
         assertEq(feeDistributor.veSupply(startTime + WEEK * 20), 0);
 
+        vm.warp(startTime + 39 * WEEK);
         feeDistributor.checkpointTotalSupply();
 
         assertEq(feeDistributor.timeCursor(), startTime + WEEK * 40);
