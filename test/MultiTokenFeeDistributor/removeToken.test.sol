@@ -6,7 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorRemoveTokenTest is TestBase {
+contract MultiTokenFeeDistributor_RemoveTokenTest is TestBase {
     MultiTokenFeeDistributor distributor;
     SampleToken tokenA;
     SampleToken tokenB;

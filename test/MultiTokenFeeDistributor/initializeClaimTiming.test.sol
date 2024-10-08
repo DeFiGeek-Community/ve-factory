@@ -7,7 +7,7 @@ import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorInitializeClaimTimingTest is TestBase {
+contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 

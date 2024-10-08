@@ -8,7 +8,7 @@ import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import {console} from "forge-std/console.sol";
 
-contract MultiTokenFeeDistributorCheckpointTotalSupplyTest is TestBase {
+contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
     uint256 constant WEEK = 7 days;
     address alice;
     address bob;

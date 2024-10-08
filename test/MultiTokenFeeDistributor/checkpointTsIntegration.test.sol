@@ -6,7 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorCheckpointTsIntegrationTest is Test {
+contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant MAX_EXAMPLES = 10;

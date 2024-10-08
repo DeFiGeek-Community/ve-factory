@@ -6,7 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorAdminManagementTest is TestBase {
+contract MultiTokenFeeDistributor_AdminManagementTest is TestBase {
     MultiTokenFeeDistributor distributor;
     address admin;
     address newAdmin;

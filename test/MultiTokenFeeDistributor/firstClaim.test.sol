@@ -8,7 +8,7 @@ import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributorFirstClaimTest is Test {
+contract MultiTokenFeeDistributor_FirstClaimTest is Test {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant amount = 1e18 * 1000; // 1000 tokens

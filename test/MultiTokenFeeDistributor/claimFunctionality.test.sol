@@ -8,7 +8,7 @@ import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import {console} from "forge-std/console.sol";
 
-contract MultiTokenFeeDistributorClaimFunctionalityTest is TestBase {
+contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 

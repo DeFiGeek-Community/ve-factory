@@ -7,7 +7,7 @@ import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorCheckpointTokenTest is TestBase {
+contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant YEAR = DAY * 365;

@@ -7,7 +7,7 @@ import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/Storage/Storage.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorAddTokenTest is Test {
+contract MultiTokenFeeDistributor_AddTokenTest is Test {
     MultiTokenFeeDistributor distributor;
     SampleToken tokenA;
     SampleToken tokenB;

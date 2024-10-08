@@ -7,7 +7,7 @@ import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract MultiTokenFeeDistributorKillFeeDistroTest is TestBase {
+contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
     address alice;
     address bob;
     address charlie;
