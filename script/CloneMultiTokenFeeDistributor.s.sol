@@ -4,12 +4,11 @@ pragma solidity ^0.8.24;
 import "forge-std/console.sol";
 import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/MultiTokenFeeDistributorFacade.sol";
-import "@ucs/ERC7546Clones.sol";
 import {UcsDeployLibrary} from "./UcsDeployLibrary.sol";
 import {DeployBase} from "./DeployBase.sol";
 
 contract CloneMultiTokenFeeDistributor is DeployBase {
-    using ERC7546Clones for address;
+    using UcsDeployLibrary for address;
 
     function run() public {
         uint256 deployerPrivateKey = getEnvUint("PRIVATE_KEY");
@@ -35,7 +34,7 @@ contract CloneMultiTokenFeeDistributor is DeployBase {
             abi.encodeCall(MultiTokenFeeDistributor.initialize, (votingEscrow, admin, emergencyReturn));
 
         vm.startPrank(admin);
-        address cloneProxy = dictionaryAddress.clone(initializerData);
+        address cloneProxy = dictionaryAddress.deployProxy(initializerData);
 
         if (output) writeDeployedAddress(cloneProxy, addTimestampToFileName("MultiTokenFeeDistributor_Proxy"));
 
