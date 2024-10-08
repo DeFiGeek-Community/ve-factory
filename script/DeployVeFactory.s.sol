@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import "openzeppelin-foundry-upgrades/Upgrades.sol";
 import "src/VeFactory.sol";
 
 contract DeployVeFactory is Script {
