@@ -149,7 +149,6 @@ contract MultiTokenFeeDistributorFeeDistributionTest is TestBase {
         vm.prank(alice);
         veToken.createLock(amount, block.timestamp + 8 * WEEK);
         vm.warp(block.timestamp + WEEK);
-        uint256 startTime = block.timestamp;
         vm.warp(block.timestamp + WEEK * 5);
         address[] memory tokens = new address[](1);
         tokens[0] = address(coinA);
@@ -173,7 +172,6 @@ contract MultiTokenFeeDistributorFeeDistributionTest is TestBase {
         vm.prank(alice);
         veToken.createLock(amount, block.timestamp + 4 * WEEK);
         vm.warp(block.timestamp + WEEK);
-        uint256 startTime = block.timestamp;
         vm.warp(block.timestamp + WEEK * 3);
 
         vm.prank(alice);
