@@ -209,8 +209,7 @@ contract MultiTokenFeeDistributor_FeeDistributionTest is TestBase {
         veToken.createLock(amount, currentTimestamp + 8 * WEEK);
         vm.prank(bob);
         veToken.createLock(amount, currentTimestamp + 8 * WEEK);
-        vm.warp(block.timestamp + WEEK);
-        uint256 startTime = block.timestamp;
+
         vm.warp(block.timestamp + WEEK * 5);
 
         address[] memory tokens = new address[](1);
