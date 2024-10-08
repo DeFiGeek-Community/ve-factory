@@ -195,8 +195,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         IVeToken(_ve).checkpoint();
 
         uint256 _sinceLastInWeeks;
-        emit eventVeSupply(_roundedTimestamp, _t);
-        if (_t > 0 && _roundedTimestamp >= _t) {
+        if (_t > 0 && _roundedTimestamp > _t) {
             unchecked {
                 _sinceLastInWeeks = (_roundedTimestamp - _t) / WEEK;
             }
@@ -215,8 +214,6 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         This prevents a scenario where checkpointTotalSupply and veToken's createLock
         occur in the same block, potentially causing veSupply to not be updated with the latest value.
         */
-        emit eventVeSupply($.timeCursor, _t);
-
         uint256 _previousWeek = $.timeCursor > WEEK ? $.timeCursor - WEEK : 0;
         if ($.lastCheckpointTotalSupplyTime == _previousWeek) {
             _updateVeSupply($, _ve, _previousWeek);
