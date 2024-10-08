@@ -168,7 +168,7 @@ contract FeeDistributor222FirstClaimTest is Test {
         distributor.checkpointToken();
 
         // 30週目にユーザがclaimを実行
-        vm.warp(startTimeToken + 8 * WEEK);
+        vm.warp(startTimeToken + 30 * WEEK);
         vm.prank(user1);
         uint256 claimedAmount = distributor.claim();
         assertApproxEqAbs(
