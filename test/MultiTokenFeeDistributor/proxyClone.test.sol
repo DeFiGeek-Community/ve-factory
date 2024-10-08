@@ -7,7 +7,7 @@ import "src/test/SampleToken.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "script/DeployMultiTokenFeeDistributor.s.sol";
 import "script/CloneMultiTokenFeeDistributor.s.sol";
-import "lib/ucs-contracts/src/dictionary/interfaces/IDictionary.sol";
+import "@ucs/dictionary/interfaces/IDictionary.sol";
 
 contract CloneMultiTokenFeeDistributorTest is Test {
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
