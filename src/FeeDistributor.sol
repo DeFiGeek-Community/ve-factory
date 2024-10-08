@@ -61,7 +61,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
         uint256 _currentWeek = block.timestamp / WEEK;
         uint256 _sinceLastInWeeks = _currentWeek - (_t / WEEK);
         if (_sinceLastInWeeks >= 20) {
-            _t = ((block.timestamp - (WEEK * 20)) / WEEK) * WEEK;
+            _t = ((block.timestamp - (WEEK * 19)) / WEEK) * WEEK;
             _sinceLast = block.timestamp - _t;
         }
         $.lastTokenTime = block.timestamp;
@@ -77,6 +77,7 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 } else {
                     $.tokensPerWeek[_thisWeek] += (_toDistribute * (block.timestamp - _t)) / _sinceLast;
                 }
+                emit eventTokensPerWeek(_thisWeek, $.tokensPerWeek[_thisWeek]);
                 break;
             } else {
                 if (_sinceLast == 0 && _nextWeek == _t) {
@@ -84,8 +85,8 @@ contract FeeDistributor is Initializable, ReentrancyGuardUpgradeable {
                 } else {
                     $.tokensPerWeek[_thisWeek] += (_toDistribute * (_nextWeek - _t)) / _sinceLast;
                 }
+                emit eventTokensPerWeek(_thisWeek, $.tokensPerWeek[_thisWeek]);
             }
-            emit eventTokensPerWeek(_thisWeek, $.tokensPerWeek[_thisWeek]);
             _t = _nextWeek;
             _thisWeek = _nextWeek;
             unchecked {
