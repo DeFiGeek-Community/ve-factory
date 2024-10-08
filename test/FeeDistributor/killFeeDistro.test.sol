@@ -7,7 +7,7 @@ import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorKillFeeDistroTest is TestBase {
+contract FeeDistributor_KillFeeDistroTest is TestBase {
     address alice;
     address bob;
     address charlie;

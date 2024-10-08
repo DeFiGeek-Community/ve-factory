@@ -7,7 +7,7 @@ import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorWithToggleCheckpointTest is TestBase {
+contract FeeDistributor_WithToggleCheckpointTest is TestBase {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
