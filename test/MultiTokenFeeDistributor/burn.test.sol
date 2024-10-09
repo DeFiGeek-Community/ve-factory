@@ -58,7 +58,7 @@ contract MultiTokenFeeDistributor_BurnTest is TestBase {
 
     function testBurnInvalidToken() public {
         // 存在しないトークンをバーンしようとするとエラーが発生するかを確認
-        vm.expectRevert("Invalid token");
+        vm.expectRevert(IMultiTokenFeeDistributor.InvalidToken.selector);
         vm.prank(admin);
         feeDistributor.burn(address(0x3));
     }
@@ -69,7 +69,7 @@ contract MultiTokenFeeDistributor_BurnTest is TestBase {
         feeDistributor.killMe();
 
         // 停止されたコントラクトでバーンしようとするとエラーが発生するかを確認
-        vm.expectRevert("Contract is killed");
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
         vm.prank(admin);
         feeDistributor.burn(address(tokenA));
     }
