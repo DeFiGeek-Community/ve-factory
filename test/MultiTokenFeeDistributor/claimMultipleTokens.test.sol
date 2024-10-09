@@ -6,6 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "src/test/AlwaysFailToken.sol";
 
 contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
     uint256 constant DAY = 86400;
@@ -22,6 +23,7 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
     IERC20 token;
     SampleToken coinA;
     SampleToken coinB;
+    AlwaysFailToken failToken;
 
     function setUp() public {
         alice = address(0x1);
@@ -31,6 +33,7 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
         token = new SampleToken(1e26);
         coinA = new SampleToken(1e26);
         coinB = new SampleToken(1e26);
+        failToken = new AlwaysFailToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
         distributor = new MultiTokenFeeDistributor();
 
@@ -39,6 +42,7 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
         _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
         _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
         _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
         _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
@@ -120,7 +124,49 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
         tokens[1] = address(coinB);
         tokens[2] = address(0x4); // Invalid token address
 
-        vm.expectRevert("Token not found");
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenNotFound.selector);
+        feeDistributor.claimMultipleTokens(tokens);
+    }
+
+    function testClaimMultipleTokensTransferFailed() public {
+        vm.startPrank(alice);
+        feeDistributor.addToken(address(failToken), block.timestamp);
+
+        feeDistributor.checkpointToken(address(failToken));
+        vm.warp(block.timestamp + WEEK);
+        feeDistributor.checkpointToken(address(failToken));
+
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(coinA);
+        tokens[1] = address(coinB);
+        tokens[2] = address(failToken);
+
+        vm.expectRevert(IMultiTokenFeeDistributor.TransferFailed.selector);
+        feeDistributor.claimMultipleTokens(tokens);
+    }
+
+    function testClaimMultipleTokensContractIsKilled() public {
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(coinA);
+        tokens[1] = address(coinB);
+
+        // コントラクトを停止する
+        feeDistributor.killMe();
+
+        // コントラクトが停止された状態でclaimMultipleTokensを呼び出す
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
+        feeDistributor.claimMultipleTokens(tokens);
+    }
+
+    function testClaimMultipleTokensNoTokensProvided() public {
+        // すべてのトークンを削除
+        feeDistributor.removeToken(address(coinA));
+        feeDistributor.removeToken(address(coinB));
+
+        // 空のトークンリストでclaimMultipleTokensを呼び出す
+        address[] memory tokens = new address[](0);
+
+        vm.expectRevert(IMultiTokenFeeDistributor.NoTokensProvided.selector);
         feeDistributor.claimMultipleTokens(tokens);
     }
 }
