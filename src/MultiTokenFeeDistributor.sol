@@ -6,22 +6,12 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "src/Interfaces/IVeToken.sol";
+import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/Storage/MultiTokenFeeDistributorSchema.sol";
 import "src/Storage/Storage.sol";
 
-contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
+contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable, IMultiTokenFeeDistributor {
     uint256 public constant WEEK = 7 days;
-
-    event CommitAdmin(address indexed admin);
-    event ApplyAdmin(address indexed admin);
-    event ToggleAllowCheckpointToken(bool toggleFlag);
-    event CheckpointToken(address indexed tokenAddress, uint256 time, uint256 tokens);
-    event Claimed(
-        address indexed tokenAddress, address indexed recipient, uint256 amount, uint256 claimEpoch, uint256 maxEpoch
-    );
-    event eventTokensPerWeek(uint256 time, uint256 value);
-    event eventVeSupply(uint256 time, uint256 value);
-    event eventBalance(uint256 time, uint256 value);
 
     /**
      * @notice Initializes the contract with necessary parameters.
@@ -29,6 +19,7 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @param admin_ The address of the admin.
      * @param emergencyReturn_ The address where tokens are sent if the contract is killed.
      */
+
     function initialize(address votingEscrow_, address admin_, address emergencyReturn_) public initializer {
         __ReentrancyGuard_init();
 
@@ -115,15 +106,16 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      *      to call.
      */
     function checkpointToken(address tokenAddress_) external {
-        require(_isTokenPresent(tokenAddress_), "Token not found");
+        if (!_isTokenPresent(tokenAddress_)) {
+            revert TokenNotFound();
+        }
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
         MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
 
-        require(
-            msg.sender == $.admin || ($.canCheckpointToken && block.timestamp > $token.lastTokenTime + 1 hours),
-            "Unauthorized"
-        );
+        if (!(msg.sender == $.admin || ($.canCheckpointToken && block.timestamp > $token.lastTokenTime + 1 hours))) {
+            revert Unauthorized();
+        }
 
         if (block.timestamp >= $.timeCursor) {
             _checkpointTotalSupply();
@@ -411,12 +403,16 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             uint256 _lastTokenTime
         )
     {
-        require(_isTokenPresent(tokenAddress_), "Token not found");
+        if (!_isTokenPresent(tokenAddress_)) {
+            revert TokenNotFound();
+        }
 
         $ = Storage.MultiTokenFeeDistributor();
         $token = $.tokenData[tokenAddress_];
 
-        require(!$.isKilled, "Contract is killed");
+        if ($.isKilled) {
+            revert ContractIsKilled();
+        }
 
         if (block.timestamp >= $.timeCursor) {
             _checkpointTotalSupply();
@@ -523,10 +519,14 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @return bool Returns true upon success.
      */
     function claimMultipleTokens(address[] calldata tokenAddresses_) external nonReentrant returns (bool) {
-        require(tokenAddresses_.length > 0, "No tokens provided");
+        if (tokenAddresses_.length == 0) {
+            revert NoTokensProvided();
+        }
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
-        require(!$.isKilled, "Contract is killed");
+        if ($.isKilled) {
+            revert ContractIsKilled();
+        }
 
         address userAddress = msg.sender;
 
@@ -536,7 +536,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         for (uint256 i; i < tokenAddresses_.length; ++i) {
             address tokenAddress = tokenAddresses_[i];
-            require(_isTokenPresent(tokenAddress), "Token not found");
+            if (!_isTokenPresent(tokenAddress)) {
+                revert TokenNotFound();
+            }
 
             MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress];
 
@@ -552,7 +554,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
             uint256 amount = _claim(userAddress, tokenAddress, $.votingEscrow, _lastTokenTime);
             if (amount > 0) {
-                require(IERC20(tokenAddress).transfer(userAddress, amount), "Transfer failed");
+                if (!IERC20(tokenAddress).transfer(userAddress, amount)) {
+                    revert TransferFailed();
+                }
                 $token.tokenLastBalance -= amount;
             }
         }
@@ -567,12 +571,16 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @dev This function allows tokens to be burned from the caller's balance to trigger a checkpoint for the token. It checks if the contract is not killed and if the token is present in the list of tokens. If the conditions are met, it transfers the tokens from the caller to the contract and triggers a checkpoint if allowed.
      */
     function burn(address tokenAddress_) external returns (bool) {
-        require(_isTokenPresent(tokenAddress_), "Invalid token");
+        if (!_isTokenPresent(tokenAddress_)) {
+            revert InvalidToken();
+        }
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
         MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
 
-        require(!$.isKilled, "Contract is killed");
+        if ($.isKilled) {
+            revert ContractIsKilled();
+        }
 
         uint256 _amount = IERC20(tokenAddress_).balanceOf(msg.sender);
         if (_amount > 0) {
@@ -597,7 +605,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * The start time is aligned to the beginning of a week based on the constant WEEK.
      */
     function addToken(address tokenAddress_, uint256 startTime_) external onlyAdmin {
-        require(!_isTokenPresent(tokenAddress_), "Token already added");
+        if (_isTokenPresent(tokenAddress_)) {
+            revert TokenAlreadyAdded();
+        }
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
         MultiTokenFeeDistributorSchema.TokenData storage $token = $.tokenData[tokenAddress_];
@@ -616,7 +626,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @dev This function updates the internal list of tokens. It requires the caller to be the admin and the token to be present in the list.
      */
     function removeToken(address tokenAddress_) external onlyAdmin {
-        require(_isTokenPresent(tokenAddress_), "Token not found");
+        if (!_isTokenPresent(tokenAddress_)) {
+            revert TokenNotFound();
+        }
 
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
         int256 tokenIndex = -1;
@@ -627,14 +639,14 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
             }
         }
 
-        require(tokenIndex != -1, "Token not found");
+        if (tokenIndex == -1) {
+            revert TokenNotFound();
+        }
 
-        // 最後の要素を削除するトークンの位置に移動
         if (uint256(tokenIndex) < $.tokens.length - 1) {
             $.tokens[uint256(tokenIndex)] = $.tokens[$.tokens.length - 1];
         }
 
-        // 配列の最後の要素を削除
         $.tokens.pop();
     }
 
@@ -657,7 +669,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function applyAdmin() external onlyAdmin {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
 
-        require($.futureAdmin != address(0), "No admin set");
+        if ($.futureAdmin == address(0)) {
+            revert NoAdminSet();
+        }
         $.admin = $.futureAdmin;
         emit ApplyAdmin($.futureAdmin);
     }
@@ -682,12 +696,13 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
 
         $.isKilled = true;
 
-        // 全てのトークンのバランスをemergencyReturnに転送
         for (uint256 i; i < $.tokens.length; ++i) {
             address tokenAddress = $.tokens[i];
             uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
             if (balance > 0) {
-                require(IERC20(tokenAddress).transfer($.emergencyReturn, balance), "Transfer failed");
+                if (!IERC20(tokenAddress).transfer($.emergencyReturn, balance)) {
+                    revert TransferFailed();
+                }
             }
         }
     }
@@ -701,10 +716,14 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     function recoverBalance(address tokenAddress_) external onlyAdmin returns (bool) {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
 
-        require(_isTokenPresent(tokenAddress_), "Cannot recover this token");
+        if (!_isTokenPresent(tokenAddress_)) {
+            revert CannotRecoverToken();
+        }
 
         uint256 _amount = IERC20(tokenAddress_).balanceOf(address(this));
-        require(IERC20(tokenAddress_).transfer($.emergencyReturn, _amount), "Transfer failed");
+        if (!IERC20(tokenAddress_).transfer($.emergencyReturn, _amount)) {
+            revert TransferFailed();
+        }
         return true;
     }
 
@@ -725,7 +744,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
      * @dev This function checks the internal list of tokens to determine if a given token is eligible for checkpointing and fee distribution. It is used to validate token addresses in various functions.
      */
     function _isTokenPresent(address tokenAddress_) internal view returns (bool) {
-        require(tokenAddress_ != address(0), "Invalid token address");
+        if (tokenAddress_ == address(0)) {
+            revert InvalidToken();
+        }
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
         for (uint256 i; i < $.tokens.length; ++i) {
             if ($.tokens[i] == tokenAddress_) {
@@ -738,7 +759,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable {
     modifier onlyAdmin() {
         MultiTokenFeeDistributorSchema.Storage storage $ = Storage.MultiTokenFeeDistributor();
 
-        require($.admin == msg.sender, "Access denied");
+        if ($.admin != msg.sender) {
+            revert AccessDenied();
+        }
         _;
     }
 
