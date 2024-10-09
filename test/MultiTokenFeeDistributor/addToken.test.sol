@@ -51,7 +51,7 @@ contract MultiTokenFeeDistributor_AddTokenTest is Test {
         distributor.addToken(address(tokenA), startTime);
 
         // 2回目のトークン追加で失敗するかをテスト
-        vm.expectRevert("Token already added");
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenAlreadyAdded.selector);
         vm.prank(admin);
         distributor.addToken(address(tokenA), startTime);
     }
