@@ -81,7 +81,7 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
     }
 
     function testOnlyAdminCanKill() public {
-        vm.expectRevert();
+        vm.expectRevert(IMultiTokenFeeDistributor.AccessDenied.selector);
         vm.prank(charlie);
         feeDistributor.killMe();
     }
@@ -89,7 +89,7 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
     function testCannotClaimAfterKilled() public {
         vm.prank(alice);
         feeDistributor.killMe();
-        vm.expectRevert();
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
         vm.prank(bob);
         feeDistributor.claim(address(coinA));
     }
@@ -97,7 +97,7 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
     function testCannotClaimForAfterKilled() public {
         vm.prank(alice);
         feeDistributor.killMe();
-        vm.expectRevert();
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
         vm.prank(bob);
         feeDistributor.claimFor(alice, address(coinA));
     }
@@ -109,7 +109,7 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
         }
         vm.prank(alice);
         feeDistributor.killMe();
-        vm.expectRevert();
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
         vm.prank(bob);
         feeDistributor.claimMany(claimants, address(coinA));
     }
