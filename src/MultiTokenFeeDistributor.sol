@@ -446,8 +446,10 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable, 
 
         uint256 _amount = _claim(_userAddress, tokenAddress_, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
-            require(IERC20(tokenAddress_).transfer(_userAddress, _amount), "Transfer failed");
-            $token.tokenLastBalance -= _amount;
+                if(!IERC20(tokenAddress_).transfer(_userAddress, _amount)){
+                    revert TransferFailed();
+                }
+                $token.tokenLastBalance -= _amount;
         }
 
         return _amount;
@@ -468,8 +470,10 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable, 
 
         uint256 _amount = _claim(userAddress_, tokenAddress_, $.votingEscrow, _lastTokenTime);
         if (_amount != 0) {
-            require(IERC20(tokenAddress_).transfer(userAddress_, _amount), "Transfer failed");
-            $token.tokenLastBalance -= _amount;
+                if(!IERC20(tokenAddress_).transfer(userAddress_, _amount)){
+                    revert TransferFailed();
+                }
+                $token.tokenLastBalance -= _amount;
         }
 
         return _amount;
@@ -498,7 +502,9 @@ contract MultiTokenFeeDistributor is Initializable, ReentrancyGuardUpgradeable, 
 
             uint256 _amount = _claim(_userAddress, tokenAddress_, $.votingEscrow, _lastTokenTime);
             if (_amount != 0) {
-                require(IERC20(tokenAddress_).transfer(_userAddress, _amount), "Transfer failed");
+                if(!IERC20(tokenAddress_).transfer(_userAddress, _amount)){
+                    revert TransferFailed();
+                }
                 _total += _amount;
             }
             unchecked {
