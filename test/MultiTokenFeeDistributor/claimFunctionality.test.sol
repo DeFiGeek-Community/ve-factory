@@ -6,6 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "src/test/AlwaysFailToken.sol";
 import {console} from "forge-std/console.sol";
 
 contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
@@ -22,6 +23,7 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
+    AlwaysFailToken failToken;
 
     function setUp() public {
         alice = address(0x1);
@@ -51,8 +53,11 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
         _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
         _use(MultiTokenFeeDistributor.startTime.selector, address(distributor));
         _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.isKilled.selector, address(distributor));
         _use(MultiTokenFeeDistributor.canCheckpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.timeCursorOf.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.userEpochOf.selector, address(distributor));
         _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
 
@@ -73,6 +78,79 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
 
     function feeDistributorInitialize(uint256 time) internal {
         feeDistributor.addToken(address(coinA), time);
+    }
+
+    function testClaimUpdatesTimeCursorAndUserEpoch() public {
+        // トークンを作成し、FeeDistributorを初期化
+        coinA = new SampleToken(1e20);
+        feeDistributor.addToken(address(coinA), block.timestamp);
+
+        // Aliceがトークンをロック
+        uint256 amount = 1000 * 1e18;
+        vm.prank(alice);
+        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+
+        // チェックポイントを許可
+        feeDistributor.toggleAllowCheckpointToken();
+
+        // 時間を進めて請求を行う
+        vm.warp(block.timestamp + WEEK * 2);
+        vm.prank(alice);
+        feeDistributor.claim(address(coinA));
+
+        // timeCursorOfとuserEpochOfが更新されていることを確認
+        uint256 timeCursor = feeDistributor.timeCursorOf(address(coinA), alice);
+        uint256 userEpoch = feeDistributor.userEpochOf(address(coinA), alice);
+
+        // 期待されるtimeCursorとuserEpochの値を計算
+        uint256 expectedTimeCursor = (block.timestamp / WEEK) * WEEK;
+        uint256 expectedUserEpoch = 1; // 初回の請求後のユーザーエポック
+
+        assertEq(timeCursor, expectedTimeCursor, "Time cursor should be updated to the current week start");
+        assertEq(userEpoch, expectedUserEpoch, "User epoch should be updated to 1 after first claim");
+    }
+
+    function testClaimTokenNotFound() public {
+        // 存在しないトークンアドレスを使用してclaimを呼び出す
+        address nonExistentToken = address(0x5);
+
+        vm.prank(alice);
+        vm.expectRevert("Token not found");
+        feeDistributor.claim(nonExistentToken);
+    }
+
+    function testClaimContractIsKilled() public {
+        coinA = new SampleToken(1e20);
+        feeDistributorInitialize(block.timestamp);
+
+        // コントラクトを停止する
+        vm.prank(address(this));
+        feeDistributor.killMe();
+
+        // コントラクトが停止された状態でclaimを呼び出す
+        vm.prank(alice);
+        vm.expectRevert("Contract is killed");
+        feeDistributor.claim(address(coinA));
+    }
+
+    function testClaimTransferFailed() public {
+        // AlwaysFailTokenを作成
+        vm.prank(address(feeDistributor));
+        failToken = new AlwaysFailToken(1e20);
+
+        // FeeDistributorを初期化
+        feeDistributor.addToken(address(failToken), block.timestamp);
+
+        vm.prank(alice);
+        veToken.createLock(1000 * 1e18, block.timestamp + 8 * WEEK);
+
+        vm.warp(block.timestamp + 2 weeks);
+        feeDistributor.toggleAllowCheckpointToken();
+
+        // Aliceが請求を試みる
+        vm.prank(alice);
+        vm.expectRevert("Transfer failed");
+        feeDistributor.claim(address(failToken));
     }
 
     function testClaimWithCheckpointAfterToggle() public {
