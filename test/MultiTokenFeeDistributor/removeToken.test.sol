@@ -51,7 +51,7 @@ contract MultiTokenFeeDistributor_RemoveTokenTest is TestBase {
 
     function testRemoveNonExistentToken() public {
         // 存在しないトークンを削除しようとするとエラーが発生するかを確認
-        vm.expectRevert("Token not found");
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenNotFound.selector);
         vm.prank(admin);
         feeDistributor.removeToken(address(0x3));
     }
@@ -61,8 +61,54 @@ contract MultiTokenFeeDistributor_RemoveTokenTest is TestBase {
         vm.prank(admin);
         feeDistributor.removeToken(address(tokenA));
 
-        vm.expectRevert("Token not found");
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenNotFound.selector);
         vm.prank(admin);
         feeDistributor.removeToken(address(tokenA));
+    }
+
+    function testAddAndRemoveTokenRepeatedly() public {
+        // Token Aを削除
+        vm.prank(admin);
+        feeDistributor.removeToken(address(tokenA));
+
+        // Token Aが削除されたかどうかを確認
+        bool isTokenPresentA = feeDistributor.isTokenPresent(address(tokenA));
+        assertFalse(isTokenPresentA, "Token A should be removed");
+
+        // Token Bがまだ存在するかを確認
+        bool isTokenPresentB = feeDistributor.isTokenPresent(address(tokenB));
+        assertTrue(isTokenPresentB, "Token B should still be present");
+
+        // Token Aを再度追加
+        vm.prank(admin);
+        feeDistributor.addToken(address(tokenA), block.timestamp);
+
+        // Token Aが再度追加されたかどうかを確認
+        isTokenPresentA = feeDistributor.isTokenPresent(address(tokenA));
+        assertTrue(isTokenPresentA, "Token A should be present after re-adding");
+
+        // Token Bを削除
+        vm.prank(admin);
+        feeDistributor.removeToken(address(tokenB));
+
+        // Token Bが削除されたかどうかを確認
+        isTokenPresentB = feeDistributor.isTokenPresent(address(tokenB));
+        assertFalse(isTokenPresentB, "Token B should be removed");
+
+        // Token Aを再度削除
+        vm.prank(admin);
+        feeDistributor.removeToken(address(tokenA));
+
+        // Token Aが再度削除されたかどうかを確認
+        isTokenPresentA = feeDistributor.isTokenPresent(address(tokenA));
+        assertFalse(isTokenPresentA, "Token A should be removed again");
+
+        // Token Bを再度追加
+        vm.prank(admin);
+        feeDistributor.addToken(address(tokenB), block.timestamp);
+
+        // Token Bが再度追加されたかどうかを確認
+        isTokenPresentB = feeDistributor.isTokenPresent(address(tokenB));
+        assertTrue(isTokenPresentB, "Token B should be present after re-adding");
     }
 }
