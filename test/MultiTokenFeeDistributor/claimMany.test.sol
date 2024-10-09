@@ -6,6 +6,7 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "src/test/AlwaysFailToken.sol";
 
 contract MultiTokenFeeDistributor_ClaimManyTest is TestBase {
     uint256 constant DAY = 86400;
@@ -22,6 +23,7 @@ contract MultiTokenFeeDistributor_ClaimManyTest is TestBase {
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
+    AlwaysFailToken failToken;
 
     function setUp() public {
         alice = address(0x1);
@@ -38,6 +40,7 @@ contract MultiTokenFeeDistributor_ClaimManyTest is TestBase {
         _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
         _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
         _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
         _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
@@ -112,5 +115,53 @@ contract MultiTokenFeeDistributor_ClaimManyTest is TestBase {
         uint256 balanceAfter = coinA.balanceOf(alice);
 
         assertTrue(balanceAfter > balanceBefore);
+    }
+
+    function testClaimManyTokenNotFound() public {
+        address[] memory claimants = new address[](3);
+        claimants[0] = alice;
+        claimants[1] = bob;
+        claimants[2] = charlie;
+
+        address nonExistentToken = address(0x5);
+
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenNotFound.selector);
+        feeDistributor.claimMany(claimants, nonExistentToken);
+    }
+
+    function testClaimManyContractIsKilled() public {
+        address[] memory claimants = new address[](3);
+        claimants[0] = alice;
+        claimants[1] = bob;
+        claimants[2] = charlie;
+
+        // コントラクトを停止する
+        feeDistributor.killMe();
+
+        // コントラクトが停止された状態でclaimManyを呼び出す
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
+        feeDistributor.claimMany(claimants, address(coinA));
+    }
+    function testClaimTransferFailed() public {
+        // AlwaysFailTokenを作成
+        vm.stopPrank();
+        vm.prank(address(feeDistributor));
+        failToken = new AlwaysFailToken(1e20);
+
+        // FeeDistributorを初期化
+        vm.startPrank(alice);
+        feeDistributor.addToken(address(failToken), block.timestamp);
+
+        vm.warp(block.timestamp + 2 weeks);
+        feeDistributor.toggleAllowCheckpointToken();
+
+        address[] memory claimants = new address[](3);
+        claimants[0] = alice;
+        claimants[1] = bob;
+        claimants[2] = charlie;
+
+        // Aliceが請求を試みる
+        vm.expectRevert(IMultiTokenFeeDistributor.TransferFailed.selector);
+        feeDistributor.claimMany(claimants, address(failToken));
     }
 }
