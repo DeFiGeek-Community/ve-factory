@@ -33,6 +33,7 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
         _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
+        _use(MultiTokenFeeDistributor.lastCheckpointTotalSupplyTime.selector, address(distributor));
         _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
 
         vm.warp(365 * 1 days);
@@ -52,8 +53,9 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
     // テスト名: testCheckpointTotalSupply
     // コメント: 1週間後にcheckpointTotalSupplyを呼び出すテスト
     function testCheckpointTotalSupply() public {
-        // 初期のtimeCursorを取得
+        // 初期のtimeCursorとlastCheckpointTotalSupplyTimeを取得
         uint256 initialTimeCursor = feeDistributor.timeCursor();
+        uint256 initialLastCheckpointTime = feeDistributor.lastCheckpointTotalSupplyTime();
         uint256 weekEpoch = ((block.timestamp + WEEK) / WEEK) * WEEK;
 
         // 時間を進める
@@ -69,6 +71,11 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         // veSupplyが更新されたか確認
         assertEq(feeDistributor.veSupply(initialTimeCursor), 0, "Initial veSupply should be 0");
         assertEq(feeDistributor.veSupply(weekEpoch), veToken.totalSupply(), "veSupply should be updated to totalSupply");
+
+        // lastCheckpointTotalSupplyTimeが更新されたか確認
+        uint256 updatedLastCheckpointTime = feeDistributor.lastCheckpointTotalSupplyTime();
+        assertTrue(updatedLastCheckpointTime > initialLastCheckpointTime, "Last checkpoint total supply time should be updated");
+        assertEq(updatedLastCheckpointTime, weekEpoch, "Last checkpoint total supply time should match the current week epoch");
     }
 
     function testClaimCheckpointsTotalSupply() public {
