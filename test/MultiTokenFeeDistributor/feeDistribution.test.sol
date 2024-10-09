@@ -27,8 +27,6 @@ contract MultiTokenFeeDistributor_FeeDistributionTest is TestBase {
         bob = address(0x2);
         charlie = address(0x3);
 
-        vm.warp(WEEK * 100);
-
         token = new SampleToken(1e32);
         token.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
