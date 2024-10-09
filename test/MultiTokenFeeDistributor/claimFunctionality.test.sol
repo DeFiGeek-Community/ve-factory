@@ -115,7 +115,7 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
         address nonExistentToken = address(0x5);
 
         vm.prank(alice);
-        vm.expectRevert("Token not found");
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenNotFound.selector);
         feeDistributor.claim(nonExistentToken);
     }
 
@@ -129,7 +129,7 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
 
         // コントラクトが停止された状態でclaimを呼び出す
         vm.prank(alice);
-        vm.expectRevert("Contract is killed");
+        vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
         feeDistributor.claim(address(coinA));
     }
 
@@ -149,7 +149,7 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
 
         // Aliceが請求を試みる
         vm.prank(alice);
-        vm.expectRevert("Transfer failed");
+        vm.expectRevert(IMultiTokenFeeDistributor.TransferFailed.selector);
         feeDistributor.claim(address(failToken));
     }
 
