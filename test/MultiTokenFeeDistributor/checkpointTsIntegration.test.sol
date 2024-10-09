@@ -20,8 +20,6 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
     address[] accounts;
 
     function setUp() public {
-        vm.warp(WEEK * 100);
-
         // アカウントのセットアップ
         accounts = new address[](MAX_EXAMPLES);
         for (uint256 i = 0; i < MAX_EXAMPLES; i++) {
