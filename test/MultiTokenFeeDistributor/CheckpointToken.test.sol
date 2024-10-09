@@ -81,14 +81,14 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         address nonExistentToken = address(0x5);
 
         vm.prank(admin);
-        vm.expectRevert("Token not found");
+        vm.expectRevert(IMultiTokenFeeDistributor.TokenNotFound.selector);
         feeDistributor.checkpointToken(nonExistentToken);
     }
 
     function testCheckpointTokenUnauthorized() public {
         // 管理者以外のユーザーがcheckpointTokenを呼び出そうとする
         vm.prank(user1);
-        vm.expectRevert("Unauthorized");
+        vm.expectRevert(IMultiTokenFeeDistributor.Unauthorized.selector);
         feeDistributor.checkpointToken(address(coinA));
 
         // 管理者がcheckpointTokenを呼び出す
@@ -112,7 +112,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         // 1時間未満でcheckpointTokenを呼び出そうとする
         vm.warp(block.timestamp + 30 minutes);
         vm.prank(user1);
-        vm.expectRevert("Unauthorized");
+        vm.expectRevert(IMultiTokenFeeDistributor.Unauthorized.selector);
         feeDistributor.checkpointToken(address(coinA));
 
         // 1時間後にcheckpointTokenを呼び出す
@@ -245,7 +245,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         vm.warp(block.timestamp + WEEK);
 
         // 権限がないため、checkpointTokenの呼び出しが失敗することを確認
-        vm.expectRevert("Unauthorized");
+        vm.expectRevert(IMultiTokenFeeDistributor.Unauthorized.selector);
         feeDistributor.checkpointToken(address(coinA));
 
         // lastTokenTimeが変更されていないことを確認
