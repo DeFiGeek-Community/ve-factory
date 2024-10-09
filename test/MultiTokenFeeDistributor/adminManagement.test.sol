@@ -54,21 +54,21 @@ contract MultiTokenFeeDistributor_AdminManagementTest is TestBase {
 
     function testApplyAdminWithoutCommit() public {
         // コミットなしで管理者を適用しようとするとエラーが発生するか確認
-        vm.expectRevert("No admin set");
+        vm.expectRevert(IMultiTokenFeeDistributor.NoAdminSet.selector);
         vm.prank(admin);
         feeDistributor.applyAdmin();
     }
 
     function testNonAdminCannotCommitAdmin() public {
         // admin以外がcommitAdminを実行しようとするとエラーが発生するか確認
-        vm.expectRevert("Access denied");
+        vm.expectRevert(IMultiTokenFeeDistributor.AccessDenied.selector);
         vm.prank(nonAdmin);
         feeDistributor.commitAdmin(newAdmin);
     }
 
     function testNonAdminCannotApplyAdmin() public {
         // admin以外がapplyAdminを実行しようとするとエラーが発生するか確認
-        vm.expectRevert("Access denied");
+        vm.expectRevert(IMultiTokenFeeDistributor.AccessDenied.selector);
         vm.prank(nonAdmin);
         feeDistributor.applyAdmin();
     }
