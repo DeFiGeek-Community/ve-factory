@@ -76,6 +76,55 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         assertEq(tokensPerWeek, 1e18 * 100, "Tokens per week should be updated");
     }
 
+    function testCheckpointTokenTokenNotFound() public {
+        // 存在しないトークンアドレスを使用してcheckpointTokenを呼び出す
+        address nonExistentToken = address(0x5);
+
+        vm.prank(admin);
+        vm.expectRevert("Token not found");
+        feeDistributor.checkpointToken(nonExistentToken);
+    }
+
+    function testCheckpointTokenUnauthorized() public {
+        // 管理者以外のユーザーがcheckpointTokenを呼び出そうとする
+        vm.prank(user1);
+        vm.expectRevert("Unauthorized");
+        feeDistributor.checkpointToken(address(coinA));
+
+        // 管理者がcheckpointTokenを呼び出す
+        vm.prank(admin);
+        feeDistributor.checkpointToken(address(coinA));
+
+        // lastTokenTimeが更新されたことを確認
+        uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
+        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+    }
+
+    function testCheckpointTokenWithTimeRestriction() public {
+        // 管理者がcheckpointTokenの許可を切り替える
+        vm.prank(admin);
+        feeDistributor.toggleAllowCheckpointToken();
+
+        // coinAをディストリビューターに送信
+        vm.prank(admin);
+        coinA.transfer(address(feeDistributor), 1e18 * 100);
+
+        // 1時間未満でcheckpointTokenを呼び出そうとする
+        vm.warp(block.timestamp + 30 minutes);
+        vm.prank(user1);
+        vm.expectRevert("Unauthorized");
+        feeDistributor.checkpointToken(address(coinA));
+
+        // 1時間後にcheckpointTokenを呼び出す
+        vm.warp(block.timestamp + 31 minutes);
+        vm.prank(user1);
+        feeDistributor.checkpointToken(address(coinA));
+
+        // lastTokenTimeが更新されたことを確認
+        uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
+        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+    }
+
     function testCheckpointTokenMultipleTimes() public {
         vm.startPrank(admin);
 
