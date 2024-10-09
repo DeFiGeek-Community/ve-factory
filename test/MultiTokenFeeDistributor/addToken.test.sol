@@ -107,4 +107,20 @@ contract MultiTokenFeeDistributor_AddTokenTest is Test {
             "Start time for token B should be aligned to the week start"
         );
     }
+
+    function testTokensFunction() public {
+        uint256 startTime = block.timestamp;
+
+        // tokenAとtokenBを追加
+        vm.prank(admin);
+        distributor.addToken(address(tokenA), startTime);
+        vm.prank(admin);
+        distributor.addToken(address(tokenB), startTime);
+
+        // tokens関数で取得したトークンリストを確認
+        address[] memory tokensList = distributor.tokens();
+        assertEq(tokensList.length, 2, "There should be two tokens in the list");
+        assertEq(tokensList[0], address(tokenA), "First token should be tokenA");
+        assertEq(tokensList[1], address(tokenB), "Second token should be tokenB");
+    }
 }
