@@ -74,8 +74,14 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
 
         // lastCheckpointTotalSupplyTimeが更新されたか確認
         uint256 updatedLastCheckpointTime = feeDistributor.lastCheckpointTotalSupplyTime();
-        assertTrue(updatedLastCheckpointTime > initialLastCheckpointTime, "Last checkpoint total supply time should be updated");
-        assertEq(updatedLastCheckpointTime, weekEpoch, "Last checkpoint total supply time should match the current week epoch");
+        assertTrue(
+            updatedLastCheckpointTime > initialLastCheckpointTime, "Last checkpoint total supply time should be updated"
+        );
+        assertEq(
+            updatedLastCheckpointTime,
+            weekEpoch,
+            "Last checkpoint total supply time should match the current week epoch"
+        );
     }
 
     function testClaimCheckpointsTotalSupply() public {

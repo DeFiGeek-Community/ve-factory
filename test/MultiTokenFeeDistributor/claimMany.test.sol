@@ -142,6 +142,7 @@ contract MultiTokenFeeDistributor_ClaimManyTest is TestBase {
         vm.expectRevert(IMultiTokenFeeDistributor.ContractIsKilled.selector);
         feeDistributor.claimMany(claimants, address(coinA));
     }
+
     function testClaimTransferFailed() public {
         // AlwaysFailTokenを作成
         vm.stopPrank();
