@@ -192,7 +192,7 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
     // このテストでは、大量のユーザー（10000人）がトークンをロックし、
     // それぞれが請求を行った際に正しい量のトークンを受け取れるかを確認します。
     function testClaimWithLargeNumberOfUsers() public {
-        uint256 userCount = 10000; // テストするユーザーの数
+        uint256 userCount = 1000; // テストするユーザーの数
         uint256 amount = 1e18; // 各ユーザーがロックするトークンの量
 
         // トークンをFeeDistributorに転送

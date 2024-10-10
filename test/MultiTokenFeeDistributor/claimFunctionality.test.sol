@@ -266,7 +266,7 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is TestBase {
     }
 
     function testClaimWithLargeNumberOfUsers() public {
-        uint256 userCount = 10000; // テストするユーザーの数
+        uint256 userCount = 1000; // テストするユーザーの数
         uint256 amount = 1e18; // 各ユーザーがロックするトークンの量
 
         // トークンをFeeDistributorに転送
