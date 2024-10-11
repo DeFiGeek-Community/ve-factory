@@ -6,17 +6,17 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_InitializeTest is TestBase {
+contract MultiTokenFeeDistributor_InitializeTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
     address alice;
     address bob;
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
-    MultiTokenFeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -27,29 +27,18 @@ contract MultiTokenFeeDistributor_InitializeTest is TestBase {
 
         token = new SampleToken(1e32);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new MultiTokenFeeDistributor();
 
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.votingEscrow.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.startTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.admin.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.emergencyReturn.selector, address(distributor));
+        (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
     }
 
-    function testInitialize() public {
-        vm.prank(alice);
-        feeDistributor.initialize(address(veToken), alice, bob);
-
+    function testInitialize() public view {
         assertEq(feeDistributor.votingEscrow(), address(veToken));
         assertEq(feeDistributor.admin(), alice);
         assertEq(feeDistributor.emergencyReturn(), bob);
     }
 
     function testInitializeMultipleTimesReverts() public {
-        feeDistributor.initialize(address(veToken), alice, bob);
-
         vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
         feeDistributor.initialize(address(veToken), alice, bob);
 
