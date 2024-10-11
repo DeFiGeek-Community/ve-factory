@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
-import "src/FeeDistributor.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployFeeDistributor.s.sol";
 
-contract FeeDistributor_ClaimFunctionalityTest is TestBase {
+contract SingleTokenFeeDistributor_ClaimFunctionalityTest is Test, DeployFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
@@ -15,9 +15,8 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
     address bob;
     address charlie;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
+    IFeeDistributor public feeDistributor;
 
-    FeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -37,37 +36,13 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         token.approve(address(veToken), type(uint256).max);
         vm.prank(charlie);
         token.approve(address(veToken), type(uint256).max);
-        distributor = new FeeDistributor();
-
-        _use(FeeDistributor.initialize.selector, address(distributor));
-        _use(FeeDistributor.checkpointToken.selector, address(distributor));
-        _use(FeeDistributor.checkpointTotalSupply.selector, address(distributor));
-        _use(FeeDistributor.claim.selector, address(distributor));
-        _use(FeeDistributor.claimFor.selector, address(distributor));
-        _use(FeeDistributor.claimMany.selector, address(distributor));
-        _use(FeeDistributor.tokensPerWeek.selector, address(distributor));
-        _use(FeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
-        _use(FeeDistributor.startTime.selector, address(distributor));
-        _use(FeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(FeeDistributor.timeCursor.selector, address(distributor));
-        _use(FeeDistributor.canCheckpointToken.selector, address(distributor));
 
         vm.warp(WEEK * 1000);
     }
 
-    // abs関数のカスタム実装
-    function abs(int256 x) internal pure returns (uint256) {
-        return x >= 0 ? uint256(x) : uint256(-x);
-    }
-
-    // 安全なキャストを行うヘルパー関数
-    function safeToInt256(uint256 x) internal pure returns (int256) {
-        require(x <= uint256(type(int256).max), "Value exceeds int256 max");
-        return int256(x);
-    }
-
     function feeDistributorInitialize(uint256 time) internal {
-        feeDistributor.initialize(address(veToken), time, address(coinA), address(this), bob);
+        (address proxyAddress,) = deploy(address(veToken), time, address(coinA), address(this), bob, false);
+        feeDistributor = IFeeDistributor(proxyAddress);
     }
 
     // このテストでは、チェックポイントトークンの許可後に請求が正しく行われるかを確認します。
@@ -79,28 +54,27 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         uint256 amount = 1000 * 1e18;
 
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
 
+        uint256 startTime = vm.getBlockTimestamp() + WEEK * 2;
+        feeDistributorInitialize(startTime);
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 1e18);
-
-        uint256 startTime = block.timestamp + WEEK * 2;
-        feeDistributorInitialize(startTime);
 
         feeDistributor.toggleAllowCheckpointToken();
         vm.warp(feeDistributor.lastTokenTime());
 
         vm.startPrank(alice);
 
-        vm.warp(block.timestamp + 6 days);
+        vm.warp(vm.getBlockTimestamp() + 6 days);
         feeDistributor.claimFor(alice);
         assertEq(coinA.balanceOf(alice), 0);
 
-        vm.warp(block.timestamp + 1 days);
+        vm.warp(vm.getBlockTimestamp() + 1 days);
         feeDistributor.claimFor(alice);
-        int256 balanceAlice = safeToInt256(coinA.balanceOf(alice));
+        uint256 balanceAlice = coinA.balanceOf(alice);
 
-        assertTrue(abs(balanceAlice - 1e18) < 20);
+        assertApproxEqAbs(balanceAlice, 1e18, 1e2);
     }
 
     // このテストでは、複数回にわたるトークンの預金とチェックポイント後、
@@ -112,11 +86,11 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         uint256 amount = 1000 * 1e18;
         // Aliceにトークンをロックさせる
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 10 * WEEK);
-        vm.warp(block.timestamp + WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 10 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
         // FeeDistributorを初期化し、チェックポイントトークンを許可する
-        feeDistributorInitialize(block.timestamp);
+        feeDistributorInitialize(vm.getBlockTimestamp());
         feeDistributor.toggleAllowCheckpointToken();
 
         // 1回目のトークン転送とチェックポイント
@@ -124,14 +98,14 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18);
 
         // Aliceが1回目の請求を行い、トークンの残高を確認する
-        vm.warp(block.timestamp + WEEK * 2);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 2);
         vm.prank(alice);
         feeDistributor.claimFor(alice);
         uint256 balanceAfterFirstClaim = coinA.balanceOf(alice);
         assertEq(balanceAfterFirstClaim, 1e18);
 
         // 2回目のトークン転送とチェックポイント
-        vm.warp(block.timestamp + WEEK * 2);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 2);
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 2e18);
         feeDistributor.checkpointToken();
@@ -155,11 +129,11 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         uint256 amount = 1000 * 1e18;
         // Aliceにトークンをロックさせる
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 10 * WEEK);
-        vm.warp(block.timestamp + WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 10 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
         // FeeDistributorを初期化し、チェックポイントトークンを許可する
-        feeDistributorInitialize(block.timestamp);
+        feeDistributorInitialize(vm.getBlockTimestamp());
         feeDistributor.toggleAllowCheckpointToken();
 
         // トークンをFeeDistributorに転送
@@ -167,13 +141,13 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18);
 
         // Aliceが請求を行い、トークンの残高を確認する
-        vm.warp(block.timestamp + WEEK * 2);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 2);
         vm.prank(alice);
         feeDistributor.claimFor(alice);
         uint256 balanceAfterFirstClaim = coinA.balanceOf(alice);
         assertEq(balanceAfterFirstClaim, 1e18);
 
-        vm.warp(block.timestamp + WEEK * 4);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 4);
         feeDistributor.checkpointToken();
 
         // さらにトークンを転送し、チェックポイントを作成
@@ -200,7 +174,7 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
         coinA = new SampleToken(userCount * 1e18);
 
         // FeeDistributorを初期化し、チェックポイントトークンを許可する
-        feeDistributorInitialize(block.timestamp);
+        feeDistributorInitialize(vm.getBlockTimestamp());
         feeDistributor.toggleAllowCheckpointToken();
 
         vm.prank(bob);
@@ -213,10 +187,10 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
             vm.prank(user);
             token.approve(address(veToken), type(uint256).max);
             vm.prank(user);
-            veToken.createLock(amount, block.timestamp + 10 * WEEK);
+            veToken.createLock(amount, vm.getBlockTimestamp() + 10 * WEEK);
         }
 
-        vm.warp(block.timestamp + WEEK * 3);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 3);
 
         // 各ユーザーがclaimを行う
         for (uint256 i = 0; i < userCount; i++) {
@@ -230,7 +204,7 @@ contract FeeDistributor_ClaimFunctionalityTest is TestBase {
             uint256 claimedAmount = balanceAfter - balanceBefore; // claimによって得られたトークン量を計算
 
             // 各ユーザーが正しい量のトークンをclaimできたことを確認
-            assertTrue(abs(safeToInt256(claimedAmount) - 1e18) < 20);
+            assertApproxEqAbs(claimedAmount, 1e18, 1e2);
         }
     }
 }
