@@ -6,35 +6,28 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_BurnTest is TestBase {
-    MultiTokenFeeDistributor distributor;
+contract MultiTokenFeeDistributor_BurnTest is Test, DeployMultiTokenFeeDistributor {
     IERC20 token;
     VeToken veToken;
     SampleToken tokenA;
     address admin = address(0x1);
     address emergencyReturn = address(0x2);
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
     function setUp() public {
-        distributor = new MultiTokenFeeDistributor();
         token = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
         tokenA = new SampleToken(1e26); // サンプルトークンを1e26発行
 
-        distributor = new MultiTokenFeeDistributor();
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.burn.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.isTokenPresent.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
-
-        feeDistributor.initialize(address(veToken), admin, emergencyReturn);
+        (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
         // トークンを事前に追加しておく
         vm.prank(admin);
-        feeDistributor.addToken(address(tokenA), block.timestamp);
+        feeDistributor.addToken(address(tokenA), vm.getBlockTimestamp());
 
         // トークンをadminに転送
         tokenA.transfer(admin, 1e18 * 100); // 100トークンをadminに転送
@@ -53,7 +46,7 @@ contract MultiTokenFeeDistributor_BurnTest is TestBase {
 
         // コントラクトのトークンバランスを確認
         uint256 contractBalance = tokenA.balanceOf(address(feeDistributor));
-        assertEq(contractBalance, 1e26, "Contract should hold the burned tokens");
+        assertEq(contractBalance, 1e18 * 100, "Contract should hold the burned tokens");
     }
 
     function testBurnInvalidToken() public {
