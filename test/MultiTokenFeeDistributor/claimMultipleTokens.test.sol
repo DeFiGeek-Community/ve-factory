@@ -7,8 +7,9 @@ import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import "src/test/AlwaysFailToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
+contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
@@ -17,8 +18,8 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
     address bob;
     address charlie;
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
-    MultiTokenFeeDistributor distributor;
+    IMultiTokenFeeDistributor public feeDistributor;
+
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -33,25 +34,14 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
         token = new SampleToken(1e26);
         coinA = new SampleToken(1e26);
         coinB = new SampleToken(1e26);
-        failToken = new AlwaysFailToken(1e26);
+
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new MultiTokenFeeDistributor();
 
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimMultipleTokens.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
+        (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
-        feeDistributor.initialize(address(veToken), alice, bob);
+        vm.prank(address(feeDistributor));
+        failToken = new AlwaysFailToken(1e26);
 
         token.transfer(alice, amount);
         token.transfer(bob, amount);
@@ -65,24 +55,24 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
         token.approve(address(veToken), amount * 10);
 
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
         vm.prank(bob);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
         vm.prank(charlie);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
 
-        vm.warp(block.timestamp + WEEK * 5);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 5);
 
         coinA.transfer(address(feeDistributor), 1e18 * 10);
         coinB.transfer(address(feeDistributor), 1e18 * 10);
 
         vm.startPrank(alice);
-        feeDistributor.addToken(address(coinA), block.timestamp);
-        feeDistributor.addToken(address(coinB), block.timestamp);
+        feeDistributor.addToken(address(coinA), vm.getBlockTimestamp());
+        feeDistributor.addToken(address(coinB), vm.getBlockTimestamp());
 
         feeDistributor.checkpointToken(address(coinA));
         feeDistributor.checkpointToken(address(coinB));
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
         feeDistributor.checkpointToken(address(coinA));
         feeDistributor.checkpointToken(address(coinB));
     }
@@ -130,10 +120,10 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is TestBase {
 
     function testClaimMultipleTokensTransferFailed() public {
         vm.startPrank(alice);
-        feeDistributor.addToken(address(failToken), block.timestamp);
+        feeDistributor.addToken(address(failToken), vm.getBlockTimestamp());
 
         feeDistributor.checkpointToken(address(failToken));
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
         feeDistributor.checkpointToken(address(failToken));
 
         address[] memory tokens = new address[](3);
