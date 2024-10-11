@@ -3,10 +3,12 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "src/MultiTokenFeeDistributor.sol";
+import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
+contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant MAX_EXAMPLES = 10;
@@ -14,7 +16,7 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
     SampleToken stakeToken;
     SampleToken rewardToken;
     VeToken veToken;
-    MultiTokenFeeDistributor distributor;
+    IMultiTokenFeeDistributor public feeDistributor;
     address admin = address(0x1);
     address emergencyReturn = address(0x2);
     address[] accounts;
@@ -31,10 +33,12 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
         stakeToken = new SampleToken(1e26);
         rewardToken = new SampleToken(1e26);
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
-        distributor = new MultiTokenFeeDistributor();
-        distributor.initialize(address(veToken), admin, emergencyReturn);
+
+        (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+
         vm.prank(admin);
-        distributor.addToken(address(rewardToken), block.timestamp);
+        feeDistributor.addToken(address(rewardToken), vm.getBlockTimestamp());
 
         // トークンの転送と承認
         for (uint256 i = 0; i < MAX_EXAMPLES; i++) {
@@ -53,8 +57,8 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
 
         for (uint256 i = 0; i < MAX_EXAMPLES; i++) {
             uint256 sleepTime = stSleep[i] * DAY;
-            vm.warp(block.timestamp + sleepTime);
-            uint256 lockTime = block.timestamp + sleepTime + WEEK * stLocktime[i];
+            vm.warp(vm.getBlockTimestamp() + sleepTime);
+            uint256 lockTime = vm.getBlockTimestamp() + sleepTime + WEEK * stLocktime[i];
             if (lockTime > finalLock) {
                 finalLock = lockTime;
             }
@@ -64,7 +68,7 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
         }
 
         for (
-            uint256 weekEpoch = getNextWeekEpoch(block.timestamp);
+            uint256 weekEpoch = getNextWeekEpoch(vm.getBlockTimestamp());
             weekEpoch <= finalLock;
             weekEpoch = getNextWeekEpoch(weekEpoch)
         ) {
@@ -72,10 +76,10 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
 
             uint256 weekBlock = block.number;
 
-            distributor.checkpointTotalSupply();
+            feeDistributor.checkpointTotalSupply();
 
             uint256 expected = veToken.totalSupplyAt(weekBlock);
-            uint256 actual = distributor.veSupply(weekEpoch);
+            uint256 actual = feeDistributor.veSupply(weekEpoch);
             assertEq(actual, expected);
         }
     }
@@ -98,7 +102,8 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test {
         uint256 generated = 0;
 
         while (generated < count) {
-            uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, nonce))) % (max - min + 1) + min;
+            uint256 randomNumber =
+                uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), nonce))) % (max - min + 1) + min;
             nonce++;
 
             bool duplicate = false;
