@@ -6,8 +6,9 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
+contract MultiTokenFeeDistributor_InitializeClaimTimingTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
@@ -15,9 +16,8 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
     address bob;
     address charlie;
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
-    MultiTokenFeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -26,6 +26,7 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
         alice = address(0x1);
         bob = address(0x2);
         charlie = address(0x3);
+        vm.warp(WEEK * 1000);
 
         token = new SampleToken(1e40);
         token.transfer(alice, 1e26);
@@ -37,41 +38,10 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
         token.approve(address(veToken), type(uint256).max);
         vm.prank(charlie);
         token.approve(address(veToken), type(uint256).max);
-        distributor = new MultiTokenFeeDistributor();
 
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.startTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.canCheckpointToken.selector, address(distributor));
+        (address proxyAddress,) = deploy(address(veToken), address(this), bob, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
-        vm.warp(WEEK * 1000);
-    }
-
-    // abs関数のカスタム実装
-    function abs(int256 x) internal pure returns (uint256) {
-        return x >= 0 ? uint256(x) : uint256(-x);
-    }
-
-    // 安全なキャストを行うヘルパー関数
-    function safeToInt256(uint256 x) internal pure returns (int256) {
-        require(x <= uint256(type(int256).max), "Value exceeds int256 max");
-        return int256(x);
-    }
-
-    function feeDistributorInitialize(uint256 time, address[] memory tokens) internal {
-        feeDistributor.initialize(address(veToken), address(this), bob);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            feeDistributor.addToken(tokens[i], time);
-        }
         feeDistributor.toggleAllowCheckpointToken();
     }
 
@@ -80,9 +50,7 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
         vm.prank(bob);
         coinA = new SampleToken(1e20);
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(coinA);
-        feeDistributorInitialize(block.timestamp, tokens);
+        feeDistributor.addToken(address(coinA), vm.getBlockTimestamp());
         assertTrue(feeDistributor.canCheckpointToken());
         vm.warp(feeDistributor.lastTokenTime(address(coinA)));
 
@@ -93,8 +61,8 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18);
 
         vm.startPrank(alice);
-        veToken.createLock(amount, block.timestamp + 3 * WEEK);
-        vm.warp(block.timestamp + 2 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 3 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + 2 * WEEK);
 
         feeDistributor.claimFor(alice, address(coinA));
         uint256 balanceBefore = coinA.balanceOf(alice);
@@ -110,30 +78,28 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
         coinA = new SampleToken(1e20);
 
         uint256 amount = 1000 * 1e18;
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 30 * WEEK);
-        vm.warp(block.timestamp + WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 30 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(coinA);
-        feeDistributorInitialize(block.timestamp, tokens);
+        feeDistributor.addToken(address(coinA), vm.getBlockTimestamp());
         vm.warp(feeDistributor.lastTokenTime(address(coinA)));
         for (uint256 i = 0; i < 3; i++) {
             for (uint256 j = 0; j < 7; j++) {
                 vm.prank(bob);
                 coinA.transfer(address(feeDistributor), 1e18);
-                vm.warp(block.timestamp + DAY);
+                vm.warp(vm.getBlockTimestamp() + DAY);
             }
         }
 
-        vm.warp(block.timestamp + WEEK * 10);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 10);
         vm.prank(alice);
         feeDistributor.claimFor(alice, address(coinA));
         coinA.balanceOf(address(this));
 
-        assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - safeToInt256(21 * 1e18)) < 1000);
+        assertApproxEqAbs(coinA.balanceOf(alice), 21 * 1e18, 1e2);
     }
 
     function testClaimBeforeTokenDeposit() public {
@@ -142,21 +108,19 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
 
         uint256 amount = 1000 * 1e18;
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
-        vm.warp(block.timestamp + WEEK);
-        uint256 startTime = block.timestamp;
-        vm.warp(block.timestamp + WEEK * 5);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
+        uint256 startTime = vm.getBlockTimestamp();
+        vm.warp(vm.getBlockTimestamp() + WEEK * 5);
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(coinA);
-        feeDistributorInitialize(startTime, tokens);
+        feeDistributor.addToken(address(coinA), startTime);
 
         vm.prank(bob);
         coinA.transfer(address(feeDistributor), 1e19);
-        vm.warp(block.timestamp + WEEK * 2);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 2);
         feeDistributor.claimFor(alice, address(coinA));
 
-        assertTrue(abs(safeToInt256(coinA.balanceOf(alice)) - 1e19) < 1000);
+        assertApproxEqAbs(coinA.balanceOf(alice), 1e19, 1e2);
     }
 
     function testClaimForMultipleTokenDeposits() public {
@@ -165,28 +129,26 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
 
         uint256 amount = 1000 * 1e18;
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 4 * WEEK);
-        vm.warp(block.timestamp + WEEK);
-        uint256 startTime = block.timestamp;
-        vm.warp(block.timestamp + WEEK * 3);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 4 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
+        uint256 startTime = vm.getBlockTimestamp();
+        vm.warp(vm.getBlockTimestamp() + WEEK * 3);
 
         vm.prank(alice);
         veToken.withdraw();
 
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 10 * WEEK);
-        vm.warp(block.timestamp + WEEK * 2);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 10 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 2);
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(coinA);
-        feeDistributorInitialize(startTime, tokens);
+        feeDistributor.addToken(address(coinA), startTime);
 
         vm.prank(bob);
-        coinA.transfer(address(feeDistributor), 10 ** 19);
-        vm.warp(block.timestamp + WEEK * 2);
+        coinA.transfer(address(feeDistributor), 1e19);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 2);
         feeDistributor.claimFor(alice, address(coinA));
 
-        assertTrue(abs(10 ** 19 - safeToInt256(coinA.balanceOf(alice))) < 1000);
+        assertApproxEqAbs(coinA.balanceOf(alice), 1e19, 1e2);
     }
 
     function testDepositedParallel() public {
@@ -196,30 +158,28 @@ contract MultiTokenFeeDistributor_InitializeClaimTimingTest is TestBase {
         uint256 amount = 1000 * 1e18;
 
         token.transfer(bob, amount);
-        uint256 currentTimestamp = block.timestamp;
+        uint256 currentTimestamp = vm.getBlockTimestamp();
         vm.prank(alice);
         veToken.createLock(amount, currentTimestamp + 8 * WEEK);
         vm.prank(bob);
         veToken.createLock(amount, currentTimestamp + 8 * WEEK);
-        vm.warp(block.timestamp + WEEK);
-        uint256 startTime = block.timestamp;
-        vm.warp(block.timestamp + WEEK * 5);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
+        uint256 startTime = vm.getBlockTimestamp();
+        vm.warp(vm.getBlockTimestamp() + WEEK * 5);
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(coinA);
-        feeDistributorInitialize(startTime, tokens);
+        feeDistributor.addToken(address(coinA), startTime);
 
         vm.prank(charlie);
         coinA.transfer(address(feeDistributor), 1e19);
         feeDistributor.checkpointToken(address(coinA));
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
         feeDistributor.checkpointToken(address(coinA));
         feeDistributor.claimFor(alice, address(coinA));
         feeDistributor.claimFor(bob, address(coinA));
 
-        int256 balanceAlice = safeToInt256(coinA.balanceOf(alice));
-        int256 balanceBob = safeToInt256(coinA.balanceOf(bob));
+        uint256 balanceAlice = coinA.balanceOf(alice);
+        uint256 balanceBob = coinA.balanceOf(bob);
         assertEq(balanceAlice, balanceBob);
-        assertTrue(abs(balanceAlice + balanceBob - 10 ** 19) < 20);
+        assertApproxEqAbs(balanceAlice + balanceBob, 1e19, 1e2);
     }
 }
