@@ -5,30 +5,26 @@ import "test/util/TestBase.sol";
 import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_RecoverBalanceTest is TestBase {
+contract MultiTokenFeeDistributor_RecoverBalanceTest is Test, DeployMultiTokenFeeDistributor {
     MultiTokenFeeDistributor distributor;
     SampleToken tokenA;
     address admin = address(0x1);
     address emergencyReturn = address(0x2);
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
     function setUp() public {
         distributor = new MultiTokenFeeDistributor();
         tokenA = new SampleToken(1e26); // サンプルトークンを1e26発行
 
-        distributor = new MultiTokenFeeDistributor();
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.recoverBalance.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.isTokenPresent.selector, address(distributor));
-
-        feeDistributor.initialize(address(this), admin, emergencyReturn);
+        (address proxyAddress,) = deploy(address(this), admin, emergencyReturn, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
         // トークンを事前に追加しておく
         vm.prank(admin);
-        feeDistributor.addToken(address(tokenA), block.timestamp);
+        feeDistributor.addToken(address(tokenA), vm.getBlockTimestamp());
 
         // トークンをコントラクトに転送
         tokenA.transfer(address(feeDistributor), 1e18 * 100); // 100トークンをコントラクトに転送
@@ -37,7 +33,7 @@ contract MultiTokenFeeDistributor_RecoverBalanceTest is TestBase {
     function testRecoverBalance() public {
         // コントラクトのトークンバランスを確認
         uint256 contractBalanceBefore = tokenA.balanceOf(address(feeDistributor));
-        assertEq(contractBalanceBefore, 1e26, "Contract should initially hold 100 tokens");
+        assertEq(contractBalanceBefore, 1e18 * 100, "Contract should initially hold 100 tokens");
 
         // adminがトークンを回収
         vm.prank(admin);
@@ -50,7 +46,7 @@ contract MultiTokenFeeDistributor_RecoverBalanceTest is TestBase {
 
         // emergencyReturnのトークンバランスを確認
         uint256 emergencyReturnBalance = tokenA.balanceOf(emergencyReturn);
-        assertEq(emergencyReturnBalance, 1e26, "Emergency return should hold the recovered tokens");
+        assertEq(emergencyReturnBalance, 1e18 * 100, "Emergency return should hold the recovered tokens");
     }
 
     function testRecoverBalanceInvalidToken() public {
