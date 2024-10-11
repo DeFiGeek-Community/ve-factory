@@ -6,15 +6,15 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
+contract MultiTokenFeeDistributor_KillFeeDistroTest is Test, DeployMultiTokenFeeDistributor {
     address alice;
     address bob;
     address charlie;
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
-    MultiTokenFeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -28,21 +28,12 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
         coinA = new SampleToken(1e26);
         coinA.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new MultiTokenFeeDistributor();
 
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.isKilled.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.killMe.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimFor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claimMany.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.emergencyReturn.selector, address(distributor));
+        (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
-        feeDistributor.initialize(address(veToken), alice, bob);
         vm.prank(alice);
-
-        feeDistributor.addToken(address(coinA), block.timestamp);
+        feeDistributor.addToken(address(coinA), vm.getBlockTimestamp());
     }
 
     function testAssumptions() public view {
@@ -66,16 +57,16 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is TestBase {
 
     function testKillingTransfersTokens() public {
         vm.startPrank(alice);
-        coinA.transfer(target, 31337);
+        coinA.transfer(address(feeDistributor), 31337);
         feeDistributor.killMe();
         assertEq(coinA.balanceOf(bob), 31337);
     }
 
     function testMultiKillTokenTransfer() public {
         vm.startPrank(alice);
-        coinA.transfer(target, 10000);
+        coinA.transfer(address(feeDistributor), 10000);
         feeDistributor.killMe();
-        coinA.transfer(target, 30000);
+        coinA.transfer(address(feeDistributor), 30000);
         feeDistributor.killMe();
         assertEq(coinA.balanceOf(bob), 40000);
     }
