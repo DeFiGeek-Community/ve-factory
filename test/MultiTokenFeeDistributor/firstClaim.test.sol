@@ -8,7 +8,7 @@ import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_FirstClaimTest is Test {
+contract MultiTokenFeeDistributor_FirstClaimTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
@@ -20,7 +20,7 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
     address user1 = address(0x3);
     address user2 = address(0x4);
 
-    IMultiTokenFeeDistributor distributor;
+    IMultiTokenFeeDistributor public feeDistributor;
     VeToken veToken;
     SampleToken rewardToken1;
     SampleToken rewardToken2;
@@ -40,15 +40,11 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
         // Initialize the veToken
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
-        // Initialize the distributor with the veToken
-        // distributor = new MultiTokenFeeDistributor();
-        // distributor.initialize(address(veToken), admin, emergencyReturn);
-        DeployMultiTokenFeeDistributor deployer = new DeployMultiTokenFeeDistributor();
-        (address proxyAddress,) = deployer.deploy(address(veToken), admin, emergencyReturn, false);
-        distributor = IMultiTokenFeeDistributor(proxyAddress);
+        (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
         // Lock user tokens in veToken
-        createTime = block.timestamp + 100 * WEEK;
+        createTime = vm.getBlockTimestamp() + 100 * WEEK;
         stakeToken.transfer(user1, amount);
         vm.prank(user1);
         stakeToken.approve(address(veToken), amount);
@@ -57,27 +53,27 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         // Admin adds rewardToken with a start time of 3 months from now
         vm.prank(admin);
-        distributor.addToken(address(rewardToken1), block.timestamp + THREE_MONTHS);
+        feeDistributor.addToken(address(rewardToken1), vm.getBlockTimestamp() + THREE_MONTHS);
         vm.prank(admin);
-        distributor.addToken(address(rewardToken2), block.timestamp + THREE_MONTHS);
+        feeDistributor.addToken(address(rewardToken2), vm.getBlockTimestamp() + THREE_MONTHS);
 
-        startTimeToken1 = distributor.startTime(address(rewardToken1));
-        startTimeToken2 = distributor.startTime(address(rewardToken2));
+        startTimeToken1 = feeDistributor.startTime(address(rewardToken1));
+        startTimeToken2 = feeDistributor.startTime(address(rewardToken2));
 
         vm.prank(admin);
-        distributor.toggleAllowCheckpointToken();
+        feeDistributor.toggleAllowCheckpointToken();
     }
 
     function testCannotClaimRewardToken1BeforeThreeMonths() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 2 months later (before the reward distribution start time)
         vm.warp(startTimeToken1 - 4 weeks);
 
         // User tries to claim but should fail because 3 months haven't passed yet
         vm.prank(user1);
-        uint256 claimedAmount = distributor.claim(address(rewardToken1));
+        uint256 claimedAmount = feeDistributor.claim(address(rewardToken1));
         assertTrue(
             claimedAmount == 0, "User should not be able to claim tokens before the reward distribution start time"
         );
@@ -87,7 +83,7 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         // User claims and should succeed
         vm.prank(user1);
-        claimedAmount = distributor.claim(address(rewardToken1));
+        claimedAmount = feeDistributor.claim(address(rewardToken1));
         assertApproxEqAbs(
             claimedAmount, 1e18 * 100, 1e4, "Claim should be approximately 1e18 * 100 tokens after 3 months"
         );
@@ -95,14 +91,14 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
     function testCanClaimRewardToken1AfterThreeMonths() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 3 months later (after the reward distribution start time)
         vm.warp(startTimeToken1 + 2 weeks);
 
         // User claims and should succeed
         vm.prank(user1);
-        uint256 claimedAmount = distributor.claim(address(rewardToken1));
+        uint256 claimedAmount = feeDistributor.claim(address(rewardToken1));
 
         assertApproxEqAbs(
             claimedAmount, 1e18 * 100, 1e4, "Claim should be approximately 1e18 * 100 tokens after 3 months"
@@ -111,32 +107,32 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
     function testClaimRewardToken1WithNewLock() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         vm.warp(startTimeToken1 + 1 weeks);
         vm.prank(user1);
-        distributor.claim(address(rewardToken1));
+        feeDistributor.claim(address(rewardToken1));
         stakeToken.transfer(user2, amount);
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
         veToken.createLock(amount, createTime);
 
-        distributor.timeCursor();
-        distributor.lastCheckpointTotalSupplyTime();
+        feeDistributor.timeCursor();
+        feeDistributor.lastCheckpointTotalSupplyTime();
 
         // Warp to 3 months later (after the reward distribution start time)
         vm.warp(startTimeToken1 + 2 weeks);
 
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // User1 claims
         vm.prank(user1);
-        uint256 claimedAmountUser1 = distributor.claim(address(rewardToken1));
+        uint256 claimedAmountUser1 = feeDistributor.claim(address(rewardToken1));
 
         // User2 claims
         vm.prank(user2);
-        uint256 claimedAmountUser2 = distributor.claim(address(rewardToken1));
+        uint256 claimedAmountUser2 = feeDistributor.claim(address(rewardToken1));
 
         // Check the distribution
         assertApproxEqAbs(
@@ -149,7 +145,7 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
     function testClaimRewardToken1WithLateLock() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 3 months later (after the reward distribution start time)
         vm.warp(startTimeToken1 + 1 weeks);
@@ -159,18 +155,18 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
-        veToken.createLock(amount, block.timestamp + 30 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 30 * WEEK);
 
         // User2 tries to claim but should fail because the lock was created after the start time
         vm.prank(user2);
-        uint256 claimedAmountUser2 = distributor.claim(address(rewardToken1));
+        uint256 claimedAmountUser2 = feeDistributor.claim(address(rewardToken1));
         assertTrue(claimedAmountUser2 == 0, "User2 should not have claimed any tokens");
     }
 
     function testCannotClaimMultipleTokensBeforeThreeMonths() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
-        rewardToken2.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
+        rewardToken2.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 2 months later (before the reward distribution start time)
         // solhint-disable-next-line security/no-block-members
@@ -178,8 +174,8 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         // User tries to claim but should fail because 3 months haven't passed yet
         vm.startPrank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
         assertTrue(
             claimedAmount1 == 0,
             "User should not be able to claim rewardToken1 before the reward distribution start time"
@@ -195,8 +191,8 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         // User claims and should succeed
         vm.startPrank(user1);
-        claimedAmount1 = distributor.claim(address(rewardToken1));
-        claimedAmount2 = distributor.claim(address(rewardToken2));
+        claimedAmount1 = feeDistributor.claim(address(rewardToken1));
+        claimedAmount2 = feeDistributor.claim(address(rewardToken2));
         assertApproxEqAbs(
             claimedAmount1,
             1e18 * 100,
@@ -213,8 +209,8 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
     function testCanClaimMultipleTokensAfterThreeMonths() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
-        rewardToken2.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
+        rewardToken2.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 3 months later (after the reward distribution start time)
         // solhint-disable-next-line security/no-block-members
@@ -222,8 +218,8 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         // User claims and should succeed
         vm.startPrank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
 
         assertApproxEqAbs(
             claimedAmount1,
@@ -241,12 +237,12 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
     // コメント: 複数のトークンを請求するテスト
     function testMultiTokenClaim() public {
-        rewardToken1.transfer(address(distributor), 1e18);
-        rewardToken2.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
 
         vm.warp(startTimeToken1 + 1 weeks);
         vm.prank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
         assertApproxEqAbs(
             claimedAmount1,
             1e18,
@@ -256,7 +252,7 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         vm.warp(startTimeToken1 + 19 weeks);
         vm.prank(user1);
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
         assertApproxEqAbs(
             claimedAmount2,
             1e18,
@@ -264,11 +260,11 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
             "User should be able to claim approximately 1e18 tokens of rewardToken2 after 19 weeks"
         );
 
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
 
         vm.warp(startTimeToken1 + 24 weeks);
         vm.prank(user1);
-        claimedAmount1 = distributor.claim(address(rewardToken1));
+        claimedAmount1 = feeDistributor.claim(address(rewardToken1));
         assertApproxEqAbs(
             claimedAmount1,
             1e18,
@@ -279,12 +275,12 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
     // コメント: 複数のトークンを20週以上空けて請求するシナリオのテスト
     function testMultiTokenClaim2() public {
-        rewardToken1.transfer(address(distributor), 1e18);
-        rewardToken2.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
 
         vm.warp(startTimeToken1 + 1 weeks);
         vm.prank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
         assertApproxEqAbs(
             claimedAmount1,
             1e18,
@@ -294,7 +290,7 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
 
         vm.warp(startTimeToken1 + 22 weeks);
         vm.prank(user1);
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
         assertApproxEqAbs(
             claimedAmount2,
             1e18,
@@ -302,11 +298,11 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
             "User should be able to claim approximately 1e18 tokens of rewardToken2 after 22 weeks"
         );
 
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
 
         vm.warp(startTimeToken1 + 43 weeks);
         vm.prank(user1);
-        claimedAmount1 = distributor.claim(address(rewardToken1));
+        claimedAmount1 = feeDistributor.claim(address(rewardToken1));
         assertApproxEqAbs(
             claimedAmount1,
             1e18,
@@ -319,20 +315,20 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
     function testOwnerDepositsAndUserClaims() public {
         vm.warp(startTimeToken1);
         // 0週目にリワードトークンを投入し、tokenCheckpointを実行
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
+        feeDistributor.checkpointToken(address(rewardToken1));
 
         // 22週目にリワードトークンを投入し、tokenCheckpointを実行
         vm.warp(startTimeToken1 + 22 * WEEK);
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
+        feeDistributor.checkpointToken(address(rewardToken1));
 
         // 30週目にユーザがclaimを実行
         vm.warp(startTimeToken1 + 8 * WEEK);
         vm.prank(user1);
-        uint256 claimedAmount = distributor.claim(address(rewardToken1));
+        uint256 claimedAmount = feeDistributor.claim(address(rewardToken1));
         assertApproxEqAbs(
             claimedAmount, 2e18, 1e4, "User should be able to claim approximately 2e18 tokens after 30 weeks"
         );
@@ -342,27 +338,27 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
     function testOwnerDepositsAndUserClaimsMultipleTokens() public {
         vm.warp(startTimeToken1);
         // 0週目にリワードトークンを投入し、tokenCheckpointを実行
-        rewardToken1.transfer(address(distributor), 1e18);
-        rewardToken2.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
+        feeDistributor.checkpointToken(address(rewardToken1));
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken2));
+        feeDistributor.checkpointToken(address(rewardToken2));
 
         // 22週目にリワードトークンを投入し、tokenCheckpointを実行
         vm.warp(startTimeToken1 + 22 * WEEK);
-        rewardToken1.transfer(address(distributor), 1e18);
-        rewardToken2.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
+        feeDistributor.checkpointToken(address(rewardToken1));
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken2));
+        feeDistributor.checkpointToken(address(rewardToken2));
 
         // 30週目にユーザがclaimを実行
         vm.warp(startTimeToken1 + 30 * WEEK);
         vm.startPrank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
         assertApproxEqAbs(
             claimedAmount1,
             2e18,
@@ -381,33 +377,33 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
     function testOwnerDepositsAndUserClaimsWithStaggeredCheckpoints() public {
         vm.warp(startTimeToken1);
         // 0週目にリワードトークンを投入し、tokenCheckpointを実行
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
+        feeDistributor.checkpointToken(address(rewardToken1));
 
         // 0週目に少し遅れてrewardToken2を投入し、tokenCheckpointを実行
         vm.warp(startTimeToken2 + 2 * WEEK);
-        rewardToken2.transfer(address(distributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken2));
+        feeDistributor.checkpointToken(address(rewardToken2));
 
         // 22週目にリワードトークンを投入し、tokenCheckpointを実行
         vm.warp(startTimeToken1 + 22 * WEEK);
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken1));
+        feeDistributor.checkpointToken(address(rewardToken1));
 
         // 22週目に少し遅れてrewardToken2を投入し、tokenCheckpointを実行
         vm.warp(startTimeToken2 + 24 * WEEK);
-        rewardToken2.transfer(address(distributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken(address(rewardToken2));
+        feeDistributor.checkpointToken(address(rewardToken2));
 
         // 30週目にユーザがclaimを実行
         vm.warp(startTimeToken1 + 30 * WEEK);
         vm.startPrank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
         assertApproxEqAbs(
             claimedAmount1,
             2e18,
@@ -427,23 +423,23 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
-        veToken.createLock(amount, block.timestamp + 4 * 365 days);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 4 * 365 days);
 
         // 3年後にwarp
-        vm.warp(block.timestamp + 3 * 365 days);
+        vm.warp(vm.getBlockTimestamp() + 3 * 365 days);
 
         // rewardToken3を追加
         vm.prank(admin);
-        distributor.addToken(address(rewardToken3), block.timestamp);
+        feeDistributor.addToken(address(rewardToken3), vm.getBlockTimestamp());
 
         // rewardToken3をディストリビューターに送信
-        rewardToken3.transfer(address(distributor), 1e18 * 100);
+        rewardToken3.transfer(address(feeDistributor), 1e18 * 100);
 
-        vm.warp(distributor.startTime(address(rewardToken3)) + 1 weeks);
+        vm.warp(feeDistributor.startTime(address(rewardToken3)) + 1 weeks);
 
         // ユーザがclaimを実行
         vm.prank(user2);
-        uint256 claimedAmount = distributor.claim(address(rewardToken3));
+        uint256 claimedAmount = feeDistributor.claim(address(rewardToken3));
 
         // 期待されるトークン量を検証
         assertApproxEqAbs(
@@ -459,22 +455,22 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test {
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
-        veToken.createLock(amount, block.timestamp + 4 * 365 days);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 4 * 365 days);
 
         // 3年後にwarp
-        vm.warp(block.timestamp + 3 * 365 days);
+        vm.warp(vm.getBlockTimestamp() + 3 * 365 days);
 
         // rewardToken3を追加
         vm.prank(admin);
-        distributor.addToken(address(rewardToken3), block.timestamp);
+        feeDistributor.addToken(address(rewardToken3), vm.getBlockTimestamp());
 
         // 3年+22週間後に、rewardToken3をディストリビューターに送信
-        vm.warp(distributor.startTime(address(rewardToken3)) + 22 weeks);
-        rewardToken3.transfer(address(distributor), 1e18 * 100);
+        vm.warp(feeDistributor.startTime(address(rewardToken3)) + 22 weeks);
+        rewardToken3.transfer(address(feeDistributor), 1e18 * 100);
 
         // ユーザがclaimを実行
         vm.prank(user2);
-        uint256 claimedAmount = distributor.claim(address(rewardToken3));
+        uint256 claimedAmount = feeDistributor.claim(address(rewardToken3));
 
         // 期待されるトークン量を検証
         assertApproxEqAbs(
