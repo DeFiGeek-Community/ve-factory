@@ -5,34 +5,30 @@ import "test/util/TestBase.sol";
 import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_RemoveTokenTest is TestBase {
+contract MultiTokenFeeDistributor_RemoveTokenTest is Test, DeployMultiTokenFeeDistributor {
     MultiTokenFeeDistributor distributor;
     SampleToken tokenA;
     SampleToken tokenB;
     address admin = address(0x1);
     address emergencyReturn = address(0x2);
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
     function setUp() public {
         distributor = new MultiTokenFeeDistributor();
         tokenA = new SampleToken(1e26); // サンプルトークンを1e26発行
         tokenB = new SampleToken(1e26);
 
-        distributor = new MultiTokenFeeDistributor();
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.isTokenPresent.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.removeToken.selector, address(distributor));
-
-        feeDistributor.initialize(address(this), admin, emergencyReturn);
+        (address proxyAddress,) = deploy(address(this), admin, emergencyReturn, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
         // トークンを事前に追加しておく
         vm.prank(admin);
-        feeDistributor.addToken(address(tokenA), block.timestamp);
+        feeDistributor.addToken(address(tokenA), vm.getBlockTimestamp());
         vm.prank(admin);
-        feeDistributor.addToken(address(tokenB), block.timestamp);
+        feeDistributor.addToken(address(tokenB), vm.getBlockTimestamp());
     }
 
     function testRemoveToken() public {
@@ -81,7 +77,7 @@ contract MultiTokenFeeDistributor_RemoveTokenTest is TestBase {
 
         // Token Aを再度追加
         vm.prank(admin);
-        feeDistributor.addToken(address(tokenA), block.timestamp);
+        feeDistributor.addToken(address(tokenA), vm.getBlockTimestamp());
 
         // Token Aが再度追加されたかどうかを確認
         isTokenPresentA = feeDistributor.isTokenPresent(address(tokenA));
@@ -105,7 +101,7 @@ contract MultiTokenFeeDistributor_RemoveTokenTest is TestBase {
 
         // Token Bを再度追加
         vm.prank(admin);
-        feeDistributor.addToken(address(tokenB), block.timestamp);
+        feeDistributor.addToken(address(tokenB), vm.getBlockTimestamp());
 
         // Token Bが再度追加されたかどうかを確認
         isTokenPresentB = feeDistributor.isTokenPresent(address(tokenB));
