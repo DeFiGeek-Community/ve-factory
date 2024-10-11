@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
-import "src/FeeDistributor.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployFeeDistributor.s.sol";
 
-contract FeeDistributor_InitializeTest is TestBase {
+contract SingleTokenFeeDistributor_InitializeTest is Test, DeployFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
 
     address alice;
     address bob;
+    uint256 startTime;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
+    IFeeDistributor public feeDistributor;
 
-    FeeDistributor distributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -27,22 +27,14 @@ contract FeeDistributor_InitializeTest is TestBase {
 
         token = new SampleToken(1e32);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new FeeDistributor();
 
-        _use(FeeDistributor.initialize.selector, address(distributor));
-        _use(FeeDistributor.votingEscrow.selector, address(distributor));
-        _use(FeeDistributor.startTime.selector, address(distributor));
-        _use(FeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(FeeDistributor.timeCursor.selector, address(distributor));
-        _use(FeeDistributor.token.selector, address(distributor));
-        _use(FeeDistributor.admin.selector, address(distributor));
-        _use(FeeDistributor.emergencyReturn.selector, address(distributor));
+        startTime = vm.getBlockTimestamp();
+
+        (address proxyAddress,) = deploy(address(veToken), startTime, address(coinA), alice, bob, false);
+        feeDistributor = IFeeDistributor(proxyAddress);
     }
 
-    function testInitialize() public {
-        vm.prank(alice);
-        uint256 startTime = block.timestamp;
-        feeDistributor.initialize(address(veToken), startTime, address(coinA), alice, bob);
+    function testInitialize() public view {
 
         uint256 time = (startTime / WEEK) * WEEK;
 
@@ -56,13 +48,11 @@ contract FeeDistributor_InitializeTest is TestBase {
     }
 
     function testInitializeMultipleTimesReverts() public {
-        uint256 startTime = block.timestamp;
-        distributor.initialize(address(veToken), startTime, address(token), alice, bob);
 
         vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
-        distributor.initialize(address(veToken), startTime, address(token), alice, bob);
+        feeDistributor.initialize(address(veToken), startTime, address(token), alice, bob);
 
         vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
-        distributor.initialize(address(veToken), startTime, address(token), alice, bob);
+        feeDistributor.initialize(address(veToken), startTime, address(token), alice, bob);
     }
 }
