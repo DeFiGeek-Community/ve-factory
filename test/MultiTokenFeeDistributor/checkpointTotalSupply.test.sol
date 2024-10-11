@@ -7,15 +7,15 @@ import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import {console} from "forge-std/console.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
+contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant WEEK = 7 days;
     address alice;
     address bob;
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
-    MultiTokenFeeDistributor distributor;
     VeToken veToken;
     SampleToken token;
     SampleToken tokenA;
@@ -26,28 +26,20 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         token = new SampleToken(1e26);
         tokenA = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new MultiTokenFeeDistributor();
 
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.checkpointTotalSupply.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.timeCursor.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.lastCheckpointTotalSupplyTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.claim.selector, address(distributor));
+        (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
         vm.warp(365 * 1 days);
-
-        feeDistributor.initialize(address(veToken), alice, bob);
         vm.prank(alice);
-        feeDistributor.addToken(address(tokenA), block.timestamp);
+        feeDistributor.addToken(address(tokenA), vm.getBlockTimestamp());
 
         // Aliceがトークンをロック
         token.transfer(alice, 1e24);
         vm.prank(alice);
         token.approve(address(veToken), 1e24);
         vm.prank(alice);
-        veToken.createLock(1e24, block.timestamp + 4 * 365 * 86400); // 4年間ロック
+        veToken.createLock(1e24, vm.getBlockTimestamp() + 4 * 365 * 86400); // 4年間ロック
     }
 
     // テスト名: testCheckpointTotalSupply
@@ -56,7 +48,7 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         // 初期のtimeCursorとlastCheckpointTotalSupplyTimeを取得
         uint256 initialTimeCursor = feeDistributor.timeCursor();
         uint256 initialLastCheckpointTime = feeDistributor.lastCheckpointTotalSupplyTime();
-        uint256 weekEpoch = ((block.timestamp + WEEK) / WEEK) * WEEK;
+        uint256 weekEpoch = ((vm.getBlockTimestamp() + WEEK) / WEEK) * WEEK;
 
         // 時間を進める
         vm.warp(weekEpoch);
@@ -97,12 +89,12 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         uint256 initialTimeCursor = feeDistributor.timeCursor();
 
         // 時間を進める
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
         // checkpointTotalSupplyを複数回呼び出し
         vm.prank(alice);
         feeDistributor.checkpointTotalSupply();
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
         vm.prank(alice);
         feeDistributor.checkpointTotalSupply();
 
@@ -124,7 +116,7 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         uint256 initialTimeCursor = feeDistributor.timeCursor();
 
         // 20週間時間を進める
-        vm.warp(block.timestamp + 20 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + 20 * WEEK);
 
         // checkpointTotalSupplyを呼び出し
         vm.prank(alice);
@@ -149,7 +141,7 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
         uint256 initialTimeCursor = feeDistributor.timeCursor();
 
         // 40週間時間を進める
-        vm.warp(block.timestamp + 45 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + 45 * WEEK);
 
         vm.prank(alice);
         feeDistributor.checkpointTotalSupply();
@@ -181,7 +173,7 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is TestBase {
 
         for (uint256 i = 0; i < 3; i++) {
             // 20週間時間を進める
-            vm.warp(block.timestamp + 20 * WEEK);
+            vm.warp(vm.getBlockTimestamp() + 20 * WEEK);
 
             vm.prank(alice);
             feeDistributor.checkpointTotalSupply();
