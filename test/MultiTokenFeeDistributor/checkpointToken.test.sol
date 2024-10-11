@@ -6,8 +6,9 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
+contract MultiTokenFeeDistributor_CheckpointTokenTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant YEAR = DAY * 365;
@@ -16,9 +17,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
     address user1 = address(0x3);
     address user2 = address(0x4);
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
-
-    MultiTokenFeeDistributor distributor;
+    IMultiTokenFeeDistributor public feeDistributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -29,21 +28,14 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         vm.prank(admin);
         coinA = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new MultiTokenFeeDistributor();
-        vm.warp(WEEK * 100);
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.addToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.tokenLastBalance.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.lastTokenTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.startTime.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.toggleAllowCheckpointToken.selector, address(distributor));
 
-        feeDistributor.initialize(address(veToken), admin, emergencyReturn);
+        (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+
+        vm.warp(WEEK * 100);
+
         vm.prank(admin);
-        feeDistributor.addToken(address(coinA), block.timestamp);
+        feeDistributor.addToken(address(coinA), vm.getBlockTimestamp());
 
         // user1がトークンをロック
         vm.prank(admin);
@@ -51,7 +43,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         vm.prank(user1);
         token.approve(address(veToken), 1e24);
         vm.prank(user1);
-        veToken.createLock(1e24, block.timestamp + 4 * 365 * 86400); // 4年間ロック
+        veToken.createLock(1e24, vm.getBlockTimestamp() + 4 * 365 * 86400); // 4年間ロック
     }
 
     function testCheckpointToken() public {
@@ -68,7 +60,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
 
         assertEq(tokenLastBalance, 1e18 * 100, "Token last balance should be updated");
-        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+        assertEq(lastTokenTime, vm.getBlockTimestamp(), "Last token time should be updated to current block timestamp");
 
         // tokensPerWeekが正しく更新されたか確認
         uint256 startTime = feeDistributor.startTime(address(coinA));
@@ -97,7 +89,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
 
         // lastTokenTimeが更新されたことを確認
         uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
-        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+        assertEq(lastTokenTime, vm.getBlockTimestamp(), "Last token time should be updated to current block timestamp");
     }
 
     function testCheckpointTokenWithTimeRestriction() public {
@@ -110,19 +102,19 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18 * 100);
 
         // 1時間未満でcheckpointTokenを呼び出そうとする
-        vm.warp(block.timestamp + 30 minutes);
+        vm.warp(vm.getBlockTimestamp() + 30 minutes);
         vm.prank(user1);
         vm.expectRevert(IMultiTokenFeeDistributor.Unauthorized.selector);
         feeDistributor.checkpointToken(address(coinA));
 
         // 1時間後にcheckpointTokenを呼び出す
-        vm.warp(block.timestamp + 31 minutes);
+        vm.warp(vm.getBlockTimestamp() + 31 minutes);
         vm.prank(user1);
         feeDistributor.checkpointToken(address(coinA));
 
         // lastTokenTimeが更新されたことを確認
         uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
-        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+        assertEq(lastTokenTime, vm.getBlockTimestamp(), "Last token time should be updated to current block timestamp");
     }
 
     function testCheckpointTokenMultipleTimes() public {
@@ -147,7 +139,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
 
         assertEq(tokenLastBalance, 1e18 * 150, "Token last balance should be 150 after multiple calls");
-        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+        assertEq(lastTokenTime, vm.getBlockTimestamp(), "Last token time should be updated to current block timestamp");
 
         // tokensPerWeekが正しく更新されたか確認
         uint256 tokensPerWeek = feeDistributor.tokensPerWeek(address(coinA), startTime);
@@ -167,7 +159,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18 * 100);
 
         // 20週間後にcheckpointTokenを呼び出し
-        vm.warp(block.timestamp + 20 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + 20 * WEEK);
         feeDistributor.checkpointToken(address(coinA));
 
         // tokenLastBalanceとlastTokenTimeが正しく更新されたか確認
@@ -175,7 +167,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
 
         assertEq(tokenLastBalance, 1e18 * 100, "Token last balance should be 100 after 20 weeks");
-        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+        assertEq(lastTokenTime, vm.getBlockTimestamp(), "Last token time should be updated to current block timestamp");
 
         // tokensPerWeekが正しく更新されたか確認
         for (uint256 i = 1; i < 20; ++i) {
@@ -202,7 +194,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         coinA.transfer(address(feeDistributor), 1e18 * 100);
 
         // 21週間後にcheckpointTokenを呼び出し
-        vm.warp(block.timestamp + 21 * WEEK);
+        vm.warp(vm.getBlockTimestamp() + 21 * WEEK);
         feeDistributor.checkpointToken(address(coinA));
 
         // tokenLastBalanceとlastTokenTimeが正しく更新されたか確認
@@ -210,7 +202,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         uint256 lastTokenTime = feeDistributor.lastTokenTime(address(coinA));
 
         assertEq(tokenLastBalance, 1e18 * 100, "Token last balance should be 100 after 21 weeks");
-        assertEq(lastTokenTime, block.timestamp, "Last token time should be updated to current block timestamp");
+        assertEq(lastTokenTime, vm.getBlockTimestamp(), "Last token time should be updated to current block timestamp");
 
         // tokensPerWeekが正しく更新されたか確認
         for (uint256 i = 1; i < 20; ++i) {
@@ -242,7 +234,7 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is TestBase {
         uint256 initialLastTokenTime = feeDistributor.lastTokenTime(address(coinA));
 
         // 1週間後にwarp
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
         // 権限がないため、checkpointTokenの呼び出しが失敗することを確認
         vm.expectRevert(IMultiTokenFeeDistributor.Unauthorized.selector);
