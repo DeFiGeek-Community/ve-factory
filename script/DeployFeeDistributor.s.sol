@@ -21,24 +21,33 @@ contract DeployFeeDistributor is DeployBase {
         vm.startBroadcast(deployerPrivateKey);
 
         // deploy関数に環境変数から読み込んだ引数を渡す
-        deploy(votingEscrow, startTime, token, admin, emergencyReturn);
+        (address proxyAddress, address dictionary) = deploy(votingEscrow, startTime, token, admin, emergencyReturn, true);
+
+        console.log("Deployed FeeDistributor proxy at:", proxyAddress);
+        console.log("Deployed FeeDistributor dictionary at:", dictionary);
 
         vm.stopBroadcast();
     }
 
-    function deploy(address votingEscrow, uint256 startTime, address token, address admin, address emergencyReturn)
-        internal
-        returns (address)
-    {
+    function deploy(
+        address votingEscrow,
+        uint256 startTime,
+        address token,
+        address admin,
+        address emergencyReturn,
+        bool output
+    ) internal returns (address, address) {
         // 初期化関数とその引数をエンコード
         bytes memory initializerData =
             abi.encodeCall(FeeDistributor.initialize, (votingEscrow, startTime, token, admin, emergencyReturn));
         FeeDistributor distributor = new FeeDistributor();
-        writeDeployedAddress(address(distributor), "FeeDistributor_Impl");
+        if (output) writeDeployedAddress(address(distributor), "FeeDistributor_Impl");
 
         // UcsDeployLibraryを使用してデプロイ
         address dictionary = admin.deployDictionary();
-        writeDeployedAddress(dictionary, "FeeDistributor_Dictionary");
+        if (output) writeDeployedAddress(dictionary, "FeeDistributor_Dictionary");
+
+        vm.startPrank(admin);
 
         dictionary.use(FeeDistributor.initialize.selector, address(distributor));
         dictionary.use(FeeDistributor.checkpointToken.selector, address(distributor));
@@ -72,10 +81,11 @@ contract DeployFeeDistributor is DeployBase {
         dictionary.useFacade(address(new FeeDistributorFacade()));
 
         address proxyAddress = dictionary.deployProxy(initializerData);
-        writeDeployedAddress(proxyAddress, "FeeDistributor_Proxy");
+        if (output) writeDeployedAddress(proxyAddress, "FeeDistributor_Proxy");
 
-        console.log("Deployed FeeDistributor proxy at:", proxyAddress);
-        return proxyAddress;
+        vm.stopPrank();
+
+        return (proxyAddress, dictionary);
     }
 }
 
