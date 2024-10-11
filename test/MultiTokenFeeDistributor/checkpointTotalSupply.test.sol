@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
-import "src/MultiTokenFeeDistributor.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
-import {console} from "forge-std/console.sol";
 import "script/DeployMultiTokenFeeDistributor.s.sol";
 
 contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is Test, DeployMultiTokenFeeDistributor {
@@ -186,7 +184,6 @@ contract MultiTokenFeeDistributor_CheckpointTotalSupplyTest is Test, DeployMulti
         for (uint256 i = 1; i < 60; i++) {
             uint256 week = updatedTimeCursor - (i * WEEK);
             uint256 veSupply = feeDistributor.veSupply(week);
-            console.log(i);
             assertTrue(veSupply > 0, "veSupply should be updated for each week within 60 weeks");
         }
     }

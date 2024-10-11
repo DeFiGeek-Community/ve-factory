@@ -6,7 +6,6 @@ import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
-import {console} from "forge-std/console.sol";
 import "script/DeployMultiTokenFeeDistributor.s.sol";
 
 contract MultiTokenFeeDistributor_VeForAtTest is Test, DeployMultiTokenFeeDistributor {

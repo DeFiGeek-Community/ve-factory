@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
-import "src/MultiTokenFeeDistributor.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 import "src/test/AlwaysFailToken.sol";
-import {console} from "forge-std/console.sol";
 import "script/DeployMultiTokenFeeDistributor.s.sol";
 
 contract MultiTokenFeeDistributor_ClaimFunctionalityTest is Test, DeployMultiTokenFeeDistributor {
@@ -307,9 +305,6 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is Test, DeployMultiTok
             uint256 week = startTime + (i * WEEK);
             uint256 veSupply = feeDistributor.veSupply(week);
             uint256 tokensPerWeek = feeDistributor.tokensPerWeek(address(coinA), week);
-            console.log(week);
-            console.log(veSupply);
-            console.log(tokensPerWeek);
         }
 
         // 請求後のトークン残高が正しいことを確認
