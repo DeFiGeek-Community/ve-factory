@@ -9,7 +9,7 @@ import "script/DeployMultiTokenFeeDistributor.s.sol";
 import "script/CloneMultiTokenFeeDistributor.s.sol";
 import "@ucs/dictionary/interfaces/IDictionary.sol";
 
-contract CloneMultiTokenFeeDistributorTest is Test {
+contract MultiTokenFeeDistributor_ProxyCloneTest is Test, DeployMultiTokenFeeDistributor {
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
 
     uint256 createTime;
@@ -21,8 +21,8 @@ contract CloneMultiTokenFeeDistributorTest is Test {
     CloneMultiTokenFeeDistributor cloneScript;
     DeployMultiTokenFeeDistributor deployScript;
 
-    IMultiTokenFeeDistributor distributor;
-    IMultiTokenFeeDistributor distributor2;
+    IMultiTokenFeeDistributor public feeDistributor;
+    IMultiTokenFeeDistributor public feeDistributor2;
     address dictionary;
     VeToken veToken;
     SampleToken rewardToken1;
@@ -41,66 +41,64 @@ contract CloneMultiTokenFeeDistributorTest is Test {
         stakeToken = new SampleToken(1e26);
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
-        createTime = block.timestamp + 100 weeks;
+        createTime = vm.getBlockTimestamp() + 100 weeks;
         stakeToken.transfer(user1, amount);
         vm.prank(user1);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user1);
         veToken.createLock(amount, createTime);
 
-        deployScript = new DeployMultiTokenFeeDistributor();
-        (address proxyAddress, address dictionaryAddress) =
-            deployScript.deploy(address(veToken), admin, emergencyReturn, false);
-        dictionary = dictionaryAddress;
-        distributor = IMultiTokenFeeDistributor(proxyAddress);
+        (address proxyAddress, address _dictionary) = deploy(address(veToken), admin, emergencyReturn, false);
+        dictionary = _dictionary;
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
 
         cloneScript = new CloneMultiTokenFeeDistributor();
     }
 
     function testCloneDeployment() public {
         vm.startPrank(admin);
-        distributor.addToken(address(rewardToken1), block.timestamp);
-        distributor.addToken(address(rewardToken2), block.timestamp);
-        distributor.toggleAllowCheckpointToken();
+        feeDistributor.addToken(address(rewardToken1), vm.getBlockTimestamp());
+        feeDistributor.addToken(address(rewardToken2), vm.getBlockTimestamp());
+        feeDistributor.toggleAllowCheckpointToken();
         vm.stopPrank();
 
-        rewardToken1.transfer(address(distributor), 1e18);
-        rewardToken2.transfer(address(distributor), 1e18);
-        vm.warp(distributor.startTime(address(rewardToken1)) + 1 weeks);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
+        rewardToken2.transfer(address(feeDistributor), 1e18);
+        vm.warp(feeDistributor.startTime(address(rewardToken1)) + 1 weeks);
 
         vm.prank(user1);
-        uint256 claimedAmount1 = distributor.claim(address(rewardToken1));
+        uint256 claimedAmount1 = feeDistributor.claim(address(rewardToken1));
         vm.prank(user1);
-        uint256 claimedAmount2 = distributor.claim(address(rewardToken2));
+        uint256 claimedAmount2 = feeDistributor.claim(address(rewardToken2));
 
         assertApproxEqAbs(claimedAmount1, 1e18, 1e4);
         assertApproxEqAbs(claimedAmount2, 1e18, 1e4);
 
-        assertEq(distributor.votingEscrow(), address(veToken));
-        assertEq(distributor.isTokenPresent(address(rewardToken1)), true);
-        assertEq(distributor.isTokenPresent(address(rewardToken2)), true);
-        assertEq(distributor.admin(), admin);
-        assertEq(distributor.emergencyReturn(), emergencyReturn);
-        assertNotEq(distributor.startTime(address(rewardToken1)), 0);
-        assertNotEq(distributor.startTime(address(rewardToken2)), 0);
-        assertNotEq(distributor.lastTokenTime(address(rewardToken1)), 0);
-        assertNotEq(distributor.lastTokenTime(address(rewardToken2)), 0);
-        assertNotEq(distributor.timeCursor(), 0, "timeCursor should not be zero");
+        assertEq(feeDistributor.votingEscrow(), address(veToken));
+        assertEq(feeDistributor.isTokenPresent(address(rewardToken1)), true);
+        assertEq(feeDistributor.isTokenPresent(address(rewardToken2)), true);
+        assertEq(feeDistributor.admin(), admin);
+        assertEq(feeDistributor.emergencyReturn(), emergencyReturn);
+        assertNotEq(feeDistributor.startTime(address(rewardToken1)), 0);
+        assertNotEq(feeDistributor.startTime(address(rewardToken2)), 0);
+        assertNotEq(feeDistributor.lastTokenTime(address(rewardToken1)), 0);
+        assertNotEq(feeDistributor.lastTokenTime(address(rewardToken2)), 0);
+        assertNotEq(feeDistributor.timeCursor(), 0);
 
         //  ２つ目のproxyをデプロイし、cloneをする。
         address distributor2Address = cloneScript.clone(dictionary, address(veToken), user1, user2, false);
-        distributor2 = IMultiTokenFeeDistributor(distributor2Address);
+        feeDistributor2 = IMultiTokenFeeDistributor(distributor2Address);
 
         vm.startPrank(user1);
-        distributor2.addToken(address(rewardToken3), block.timestamp);
-        distributor2.addToken(address(rewardToken4), block.timestamp);
-        distributor2.toggleAllowCheckpointToken();
+        feeDistributor2.addToken(address(rewardToken3), vm.getBlockTimestamp());
+        feeDistributor2.addToken(address(rewardToken4), vm.getBlockTimestamp());
+        feeDistributor2.toggleAllowCheckpointToken();
         vm.stopPrank();
 
-        assertEq(distributor2.votingEscrow(), address(veToken));
-        assertEq(distributor2.isTokenPresent(address(rewardToken3)), true);
-        assertEq(distributor2.isTokenPresent(address(rewardToken4)), true);
-        assertEq(distributor2.admin(), user1);
-        assertEq(distributor2.emergencyReturn(), user2);
+        assertEq(feeDistributor2.votingEscrow(), address(veToken));
+        assertEq(feeDistributor2.isTokenPresent(address(rewardToken3)), true);
+        assertEq(feeDistributor2.isTokenPresent(address(rewardToken4)), true);
+        assertEq(feeDistributor2.admin(), user1);
+        assertEq(feeDistributor2.emergencyReturn(), user2);
     }
 }
