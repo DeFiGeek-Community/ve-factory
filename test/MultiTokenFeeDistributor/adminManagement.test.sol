@@ -5,26 +5,22 @@ import "test/util/TestBase.sol";
 import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/IMultiTokenFeeDistributor.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployMultiTokenFeeDistributor.s.sol";
 
-contract MultiTokenFeeDistributor_AdminManagementTest is TestBase {
-    MultiTokenFeeDistributor distributor;
+contract MultiTokenFeeDistributor_AdminManagementTest is Test, DeployMultiTokenFeeDistributor {
     address admin;
     address newAdmin;
     address nonAdmin;
 
-    IMultiTokenFeeDistributor public feeDistributor = IMultiTokenFeeDistributor(target);
+    IMultiTokenFeeDistributor public feeDistributor;
 
     function setUp() public {
         admin = address(0x1);
         newAdmin = address(0x2);
         nonAdmin = address(0x3);
-        distributor = new MultiTokenFeeDistributor();
-        _use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.commitAdmin.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.futureAdmin.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.applyAdmin.selector, address(distributor));
-        _use(MultiTokenFeeDistributor.admin.selector, address(distributor));
-        feeDistributor.initialize(address(0), admin, address(0));
+
+        (address proxyAddress,) = deploy(address(0), admin, address(0), false);
+        feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
     }
 
     function testCommitAdmin() public {
