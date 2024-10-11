@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Test.sol";
-import "src/FeeDistributor.sol";
+import {Test} from "forge-std/Test.sol";
+import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
+import "script/DeployFeeDistributor.s.sol";
 
-contract FeeDistributor_FirstClaimTest is Test {
+contract SingleTokenFeeDistributor_FirstClaimTest is Test, DeployFeeDistributor {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
@@ -18,7 +19,8 @@ contract FeeDistributor_FirstClaimTest is Test {
     address user1 = address(0x3);
     address user2 = address(0x4);
 
-    FeeDistributor distributor;
+    IFeeDistributor public feeDistributor;
+
     VeToken veToken;
     SampleToken rewardToken1;
     SampleToken stakeToken;
@@ -34,36 +36,33 @@ contract FeeDistributor_FirstClaimTest is Test {
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
         // Initialize the distributor with the veToken
-        vm.prank(admin);
-        distributor = new FeeDistributor();
-        distributor.initialize(
-            address(veToken), block.timestamp + THREE_MONTHS, address(rewardToken1), admin, emergencyReturn
-        );
+        (address proxyAddress,) = deploy(address(veToken), vm.getBlockTimestamp() + THREE_MONTHS, address(rewardToken1), admin, admin, false);
+        feeDistributor = IFeeDistributor(proxyAddress);
 
         // Lock user tokens in veToken
-        createTime = block.timestamp + 100 * WEEK;
+        createTime = vm.getBlockTimestamp() + 100 * WEEK;
         stakeToken.transfer(user1, amount);
         vm.prank(user1);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user1);
         veToken.createLock(amount, createTime);
 
-        startTimeToken = distributor.startTime();
+        startTimeToken = feeDistributor.startTime();
 
         vm.prank(admin);
-        distributor.toggleAllowCheckpointToken();
+        feeDistributor.toggleAllowCheckpointToken();
     }
 
     function testCannotClaimRewardToken1BeforeThreeMonths() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 2 months later (before the reward distribution start time)
         vm.warp(startTimeToken - 4 weeks);
 
         // User tries to claim but should fail because 3 months haven't passed yet
         vm.prank(user1);
-        uint256 claimedAmount = distributor.claim();
+        uint256 claimedAmount = feeDistributor.claim();
         assertTrue(
             claimedAmount == 0, "User should not be able to claim tokens before the reward distribution start time"
         );
@@ -73,7 +72,7 @@ contract FeeDistributor_FirstClaimTest is Test {
 
         // User claims and should succeed
         vm.prank(user1);
-        claimedAmount = distributor.claim();
+        claimedAmount = feeDistributor.claim();
         assertApproxEqAbs(
             claimedAmount, 1e18 * 100, 1e4, "Claim should be approximately 1e18 * 100 tokens after 3 months"
         );
@@ -81,14 +80,14 @@ contract FeeDistributor_FirstClaimTest is Test {
 
     function testCanClaimRewardToken1AfterThreeMonths() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 3 months later (after the reward distribution start time)
         vm.warp(startTimeToken + 2 weeks);
 
         // User claims and should succeed
         vm.prank(user1);
-        uint256 claimedAmount = distributor.claim();
+        uint256 claimedAmount = feeDistributor.claim();
 
         assertApproxEqAbs(
             claimedAmount, 1e18 * 100, 1e4, "Claim should be approximately 1e18 * 100 tokens after 3 months"
@@ -97,32 +96,32 @@ contract FeeDistributor_FirstClaimTest is Test {
 
     function testClaimRewardToken1WithNewLock() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         vm.warp(startTimeToken + 1 weeks);
         vm.prank(user1);
-        distributor.claim();
+        feeDistributor.claim();
         stakeToken.transfer(user2, amount);
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
         veToken.createLock(amount, createTime);
 
-        distributor.timeCursor();
-        distributor.lastCheckpointTotalSupplyTime();
+        feeDistributor.timeCursor();
+        feeDistributor.lastCheckpointTotalSupplyTime();
 
         // Warp to 3 months later (after the reward distribution start time)
         vm.warp(startTimeToken + 2 weeks);
 
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // User1 claims
         vm.prank(user1);
-        uint256 claimedAmountUser1 = distributor.claim();
+        uint256 claimedAmountUser1 = feeDistributor.claim();
 
         // User2 claims
         vm.prank(user2);
-        uint256 claimedAmountUser2 = distributor.claim();
+        uint256 claimedAmountUser2 = feeDistributor.claim();
 
         // Check the distribution
         assertApproxEqAbs(
@@ -135,7 +134,7 @@ contract FeeDistributor_FirstClaimTest is Test {
 
     function testClaimRewardToken1WithLateLock() public {
         // Send some reward tokens to the distributor contract
-        rewardToken1.transfer(address(distributor), 1e18 * 100);
+        rewardToken1.transfer(address(feeDistributor), 1e18 * 100);
 
         // Warp to 3 months later (after the reward distribution start time)
         vm.warp(startTimeToken + 1 weeks);
@@ -145,11 +144,11 @@ contract FeeDistributor_FirstClaimTest is Test {
         vm.prank(user2);
         stakeToken.approve(address(veToken), amount);
         vm.prank(user2);
-        veToken.createLock(amount, block.timestamp + 30 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 30 * WEEK);
 
         // User2 tries to claim but should fail because the lock was created after the start time
         vm.prank(user2);
-        uint256 claimedAmountUser2 = distributor.claim();
+        uint256 claimedAmountUser2 = feeDistributor.claim();
         assertTrue(claimedAmountUser2 == 0, "User2 should not have claimed any tokens");
     }
 
@@ -157,20 +156,20 @@ contract FeeDistributor_FirstClaimTest is Test {
     function testOwnerDepositsAndUserClaims() public {
         vm.warp(startTimeToken);
         // 0週目にリワードトークンを投入し、tokenCheckpointを実行
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken();
+        feeDistributor.checkpointToken();
 
         // 22週目にリワードトークンを投入し、tokenCheckpointを実行
         vm.warp(startTimeToken + 22 * WEEK);
-        rewardToken1.transfer(address(distributor), 1e18);
+        rewardToken1.transfer(address(feeDistributor), 1e18);
         vm.prank(admin);
-        distributor.checkpointToken();
+        feeDistributor.checkpointToken();
 
         // 30週目にユーザがclaimを実行
         vm.warp(startTimeToken + 30 * WEEK);
         vm.prank(user1);
-        uint256 claimedAmount = distributor.claim();
+        uint256 claimedAmount = feeDistributor.claim();
         assertApproxEqAbs(
             claimedAmount, 2e18, 1e4, "User should be able to claim approximately 2e18 tokens after 30 weeks"
         );
