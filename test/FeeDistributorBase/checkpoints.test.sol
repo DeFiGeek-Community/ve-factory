@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/FeeDistributorBase.sol";
-import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorBaseCheckpointTest is TestBase {
+contract FeeDistributorBase_CheckpointTest is Test {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant YEAR = DAY * 365;
@@ -15,9 +14,7 @@ contract FeeDistributorBaseCheckpointTest is TestBase {
     address bob;
     address charlie;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
-
-    FeeDistributorBase distributor;
+    FeeDistributorBase public feeDistributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -30,30 +27,18 @@ contract FeeDistributorBaseCheckpointTest is TestBase {
         token = new SampleToken(1e26);
         coinA = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new FeeDistributorBase();
-
-        _use(FeeDistributorBase.initialize.selector, address(distributor));
-        _use(FeeDistributorBase.checkpointTotalSupply.selector, address(distributor));
-        _use(FeeDistributorBase.timeCursor.selector, address(distributor));
-        _use(FeeDistributorBase.veSupply.selector, address(distributor));
-        _use(FeeDistributorBase.claim.selector, address(distributor));
-        _use(FeeDistributorBase.claimFor.selector, address(distributor));
-        _use(FeeDistributorBase.lastTokenTime.selector, address(distributor));
-        _use(FeeDistributorBase.toggleAllowCheckpointToken.selector, address(distributor));
-
-        // vm.warp(block.timestamp + YEAR);
-
-        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
+        feeDistributor = new FeeDistributorBase();
+        feeDistributor.initialize(address(veToken), vm.getBlockTimestamp(), address(coinA), alice, bob);
 
         token.transfer(alice, 1e24);
         vm.startPrank(alice);
         token.approve(address(veToken), type(uint256).max);
-        veToken.createLock(1e18 * 1000, block.timestamp + WEEK * 52);
+        veToken.createLock(1e18 * 1000, vm.getBlockTimestamp() + WEEK * 52);
     }
 
     function testCheckpointTotalSupply() public {
         uint256 startTime = feeDistributor.timeCursor();
-        uint256 weekEpoch = ((block.timestamp + WEEK) / WEEK) * WEEK;
+        uint256 weekEpoch = ((vm.getBlockTimestamp() + WEEK) / WEEK) * WEEK;
 
         vm.warp(weekEpoch);
 
@@ -65,7 +50,7 @@ contract FeeDistributorBaseCheckpointTest is TestBase {
 
     function testAdvanceTimeCursor() public {
         uint256 startTime = feeDistributor.timeCursor();
-        vm.warp(block.timestamp + YEAR);
+        vm.warp(vm.getBlockTimestamp() + YEAR);
         feeDistributor.checkpointTotalSupply();
         uint256 newTimeCursor = feeDistributor.timeCursor();
 
@@ -92,7 +77,7 @@ contract FeeDistributorBaseCheckpointTest is TestBase {
     function testToggleAllowCheckpoint() public {
         uint256 lastTokenTime = feeDistributor.lastTokenTime();
 
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
 
         feeDistributor.claim();
         assertEq(feeDistributor.lastTokenTime(), lastTokenTime);
