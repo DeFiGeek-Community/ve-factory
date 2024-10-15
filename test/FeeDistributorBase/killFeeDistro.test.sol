@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/FeeDistributorBase.sol";
-import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorBaseKillFeeDistroTest is TestBase {
+contract FeeDistributorBase_KillFeeDistroTest is Test {
     address alice;
     address bob;
     address charlie;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
-
-    FeeDistributorBase distributor;
+    FeeDistributorBase public feeDistributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -28,17 +25,9 @@ contract FeeDistributorBaseKillFeeDistroTest is TestBase {
         coinA = new SampleToken(1e26);
         coinA.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new FeeDistributorBase();
+        feeDistributor = new FeeDistributorBase();
 
-        _use(FeeDistributorBase.initialize.selector, address(distributor));
-        _use(FeeDistributorBase.isKilled.selector, address(distributor));
-        _use(FeeDistributorBase.killMe.selector, address(distributor));
-        _use(FeeDistributorBase.claim.selector, address(distributor));
-        _use(FeeDistributorBase.claimFor.selector, address(distributor));
-        _use(FeeDistributorBase.claimMany.selector, address(distributor));
-        _use(FeeDistributorBase.emergencyReturn.selector, address(distributor));
-
-        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
+        feeDistributor.initialize(address(veToken), vm.getBlockTimestamp(), address(coinA), alice, bob);
     }
 
     function testAssumptions() public view {
@@ -62,16 +51,16 @@ contract FeeDistributorBaseKillFeeDistroTest is TestBase {
 
     function testKillingTransfersTokens() public {
         vm.startPrank(alice);
-        coinA.transfer(target, 31337);
+        coinA.transfer(address(feeDistributor), 31337);
         feeDistributor.killMe();
         assertEq(coinA.balanceOf(bob), 31337);
     }
 
     function testMultiKillTokenTransfer() public {
         vm.startPrank(alice);
-        coinA.transfer(target, 10000);
+        coinA.transfer(address(feeDistributor), 10000);
         feeDistributor.killMe();
-        coinA.transfer(target, 30000);
+        coinA.transfer(address(feeDistributor), 30000);
         feeDistributor.killMe();
         assertEq(coinA.balanceOf(bob), 40000);
     }
