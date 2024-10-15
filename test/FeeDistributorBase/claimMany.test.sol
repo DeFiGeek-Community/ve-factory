@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "test/util/TestBase.sol";
+import {Test} from "forge-std/Test.sol";
 import "src/FeeDistributorBase.sol";
-import "src/Interfaces/IFeeDistributor.sol";
 import "src/VeToken.sol";
 import "src/test/SampleToken.sol";
 
-contract FeeDistributorBaseClaimManyTest is TestBase {
+contract FeeDistributorBase_ClaimManyTest is Test {
     uint256 constant DAY = 86400;
     uint256 constant WEEK = DAY * 7;
     uint256 constant amount = 1e18 * 1000; // 1000 tokens
@@ -16,9 +15,7 @@ contract FeeDistributorBaseClaimManyTest is TestBase {
     address bob;
     address charlie;
 
-    IFeeDistributor public feeDistributor = IFeeDistributor(target);
-
-    FeeDistributorBase distributor;
+    FeeDistributorBase public feeDistributor;
     VeToken veToken;
     IERC20 token;
     SampleToken coinA;
@@ -31,20 +28,9 @@ contract FeeDistributorBaseClaimManyTest is TestBase {
         token = new SampleToken(1e26);
         coinA = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
-        distributor = new FeeDistributorBase();
+        feeDistributor = new FeeDistributorBase();
 
-        _use(FeeDistributorBase.initialize.selector, address(distributor));
-        _use(FeeDistributorBase.checkpointTotalSupply.selector, address(distributor));
-        _use(FeeDistributorBase.claimMany.selector, address(distributor));
-        _use(FeeDistributorBase.checkpointToken.selector, address(distributor));
-        _use(FeeDistributorBase.timeCursor.selector, address(distributor));
-        _use(FeeDistributorBase.veSupply.selector, address(distributor));
-        _use(FeeDistributorBase.claim.selector, address(distributor));
-        _use(FeeDistributorBase.claimFor.selector, address(distributor));
-        _use(FeeDistributorBase.lastTokenTime.selector, address(distributor));
-        _use(FeeDistributorBase.toggleAllowCheckpointToken.selector, address(distributor));
-
-        feeDistributor.initialize(address(veToken), block.timestamp, address(coinA), alice, bob);
+        feeDistributor.initialize(address(veToken), vm.getBlockTimestamp(), address(coinA), alice, bob);
 
         token.transfer(alice, amount);
         token.transfer(bob, amount);
@@ -58,19 +44,19 @@ contract FeeDistributorBaseClaimManyTest is TestBase {
         token.approve(address(veToken), amount * 10);
 
         vm.prank(alice);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
         vm.prank(bob);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
         vm.prank(charlie);
-        veToken.createLock(amount, block.timestamp + 8 * WEEK);
+        veToken.createLock(amount, vm.getBlockTimestamp() + 8 * WEEK);
 
-        vm.warp(block.timestamp + WEEK * 5);
+        vm.warp(vm.getBlockTimestamp() + WEEK * 5);
 
         coinA.transfer(address(feeDistributor), 1e18 * 10);
 
         vm.startPrank(alice);
         feeDistributor.checkpointToken();
-        vm.warp(block.timestamp + WEEK);
+        vm.warp(vm.getBlockTimestamp() + WEEK);
         feeDistributor.checkpointToken();
     }
 
