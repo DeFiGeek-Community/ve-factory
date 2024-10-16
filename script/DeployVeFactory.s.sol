@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "forge-std/Script.sol";
-import "forge-std/console.sol";
+import {DeployBase} from "./DeployBase.sol";
 import "openzeppelin-foundry-upgrades/Upgrades.sol";
 import "src/VeFactory.sol";
 
-contract DeployVeFactory is Script {
+contract DeployVeFactory is DeployBase {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        uint256 deployerPrivateKey = getEnvUint("DEPLOYER_PRIVATE_KEY");
+        address deployerAddress = vm.addr(deployerPrivateKey);
         vm.startBroadcast(deployerPrivateKey);
 
-        deploy();
+        deploy(deployerAddress);
 
         vm.stopBroadcast();
     }
 
-    function deploy() internal returns (address) {
-        address initialOwner = msg.sender;
+    function deploy(address initialOwner) internal returns (address) {
         // VeFactoryの初期化関数とその引数をエンコード
         bytes memory initializerData = abi.encodeCall(VeFactory.initialize, (initialOwner));
 

@@ -14,7 +14,7 @@ contract VeFactoryTest is Test, DeployVeFactory {
 
     function setUp() public {
         // VeFactoryの実装をデプロイし、IVeFactoryインターフェースを介してアクセス
-        factory = IVeFactory(address(deploy()));
+        factory = IVeFactory(address(deploy(msg.sender)));
         token = new SampleToken(1e18);
         tokenAddr = address(token);
     }
