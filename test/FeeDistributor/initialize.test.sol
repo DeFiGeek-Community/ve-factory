@@ -35,7 +35,6 @@ contract SingleTokenFeeDistributor_InitializeTest is Test, DeployFeeDistributor 
     }
 
     function testInitialize() public view {
-
         uint256 time = (startTime / WEEK) * WEEK;
 
         assertEq(feeDistributor.votingEscrow(), address(veToken));
@@ -48,7 +47,6 @@ contract SingleTokenFeeDistributor_InitializeTest is Test, DeployFeeDistributor 
     }
 
     function testInitializeMultipleTimesReverts() public {
-
         vm.expectRevert(abi.encodeWithSignature("InvalidInitialization()"));
         feeDistributor.initialize(address(veToken), startTime, address(token), alice, bob);
 

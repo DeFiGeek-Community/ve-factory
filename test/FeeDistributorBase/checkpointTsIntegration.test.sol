@@ -35,7 +35,9 @@ contract FeeDistributorBase_CheckpointTsIntegrationTest is Test {
         rewardToken1 = new SampleToken(1e26);
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
         feeDistributor = new FeeDistributorBase();
-        feeDistributor.initialize(address(veToken), vm.getBlockTimestamp(), address(rewardToken1), admin, emergencyReturn);
+        feeDistributor.initialize(
+            address(veToken), vm.getBlockTimestamp(), address(rewardToken1), admin, emergencyReturn
+        );
 
         // トークンの転送と承認
         for (uint256 i = 0; i < MAX_EXAMPLES; i++) {
@@ -100,7 +102,8 @@ contract FeeDistributorBase_CheckpointTsIntegrationTest is Test {
         uint256 generated = 0;
 
         while (generated < count) {
-            uint256 randomNumber = uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), nonce))) % (max - min + 1) + min;
+            uint256 randomNumber =
+                uint256(keccak256(abi.encodePacked(vm.getBlockTimestamp(), nonce))) % (max - min + 1) + min;
             nonce++;
 
             bool duplicate = false;

@@ -21,7 +21,8 @@ contract DeployFeeDistributor is DeployBase {
         vm.startBroadcast(deployerPrivateKey);
 
         // deploy関数に環境変数から読み込んだ引数を渡す
-        (address proxyAddress, address dictionary) = deploy(votingEscrow, startTime, token, admin, emergencyReturn, true);
+        (address proxyAddress, address dictionary) =
+            deploy(votingEscrow, startTime, token, admin, emergencyReturn, true);
 
         console.log("Deployed FeeDistributor proxy at:", proxyAddress);
         console.log("Deployed FeeDistributor dictionary at:", dictionary);

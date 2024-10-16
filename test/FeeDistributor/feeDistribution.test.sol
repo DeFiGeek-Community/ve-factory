@@ -38,7 +38,6 @@ contract SingleTokenFeeDistributor_FeeDistributionTest is Test, DeployFeeDistrib
         token.approve(address(veToken), type(uint256).max);
         vm.prank(charlie);
         token.approve(address(veToken), type(uint256).max);
-
     }
 
     function feeDistributorInitialize(uint256 time) internal {
