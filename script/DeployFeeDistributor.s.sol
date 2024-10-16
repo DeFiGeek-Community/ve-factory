@@ -11,7 +11,7 @@ contract DeployFeeDistributor is DeployBase {
     using UcsDeployLibrary for address;
 
     function run() public {
-        uint256 deployerPrivateKey = getEnvUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = getEnvUint("DEPLOYER_PRIVATE_KEY");
         address votingEscrow = getEnvAddress("VOTING_ESCROW");
         uint256 startTime = getEnvUint("START_TIME");
         address token = getEnvAddress("TOKEN");

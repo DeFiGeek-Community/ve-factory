@@ -11,7 +11,7 @@ contract CloneMultiTokenFeeDistributor is DeployBase {
     using UcsDeployLibrary for address;
 
     function run() public {
-        uint256 deployerPrivateKey = getEnvUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = getEnvUint("DEPLOYER_PRIVATE_KEY");
         address votingEscrow = getEnvAddress("VOTING_ESCROW");
         address admin = getEnvAddress("ADMIN");
         address emergencyReturn = getEnvAddress("EMERGENCY_RETURN");
