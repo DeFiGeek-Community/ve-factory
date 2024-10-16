@@ -301,10 +301,15 @@ contract MultiTokenFeeDistributor_ClaimFunctionalityTest is Test, DeployMultiTok
         uint256 balanceAfterClaim = coinA.balanceOf(alice);
 
         // veSupplyの値を確認
-        for (uint256 i = 0; i <= 30; i++) {
-            uint256 week = startTime + (i * WEEK);
+        uint256 currentWeek = (vm.getBlockTimestamp() / WEEK) * WEEK;
+        for (uint256 i = 1; i < 20; i++) {
+            uint256 week = currentWeek - (i * WEEK);
             uint256 veSupply = feeDistributor.veSupply(week);
             uint256 tokensPerWeek = feeDistributor.tokensPerWeek(address(coinA), week);
+
+            // veSupplyとtokensPerWeekが0以上であることを確認
+            assertTrue(veSupply > 0, "veSupply should be non-negative");
+            assertTrue(tokensPerWeek > 0, "tokensPerWeek should be non-negative");
         }
 
         // 請求後のトークン残高が正しいことを確認
