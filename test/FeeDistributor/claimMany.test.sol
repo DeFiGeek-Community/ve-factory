@@ -33,8 +33,10 @@ contract SingleTokenFeeDistributor_ClaimManyTest is Test, DeployFeeDistributor {
         coinA = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), vm.getBlockTimestamp(), address(coinA), alice, bob, false);
         feeDistributor = IFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         token.transfer(alice, amount);
         token.transfer(bob, amount);

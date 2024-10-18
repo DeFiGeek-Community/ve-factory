@@ -28,8 +28,10 @@ contract SingleTokenFeeDistributor_KillFeeDistroTest is Test, DeployFeeDistribut
         coinA.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), vm.getBlockTimestamp(), address(coinA), alice, bob, false);
         feeDistributor = IFeeDistributor(proxyAddress);
+        vm.stopPrank();
     }
 
     function testAssumptions() public view {

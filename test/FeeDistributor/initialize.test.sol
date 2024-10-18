@@ -30,8 +30,10 @@ contract SingleTokenFeeDistributor_InitializeTest is Test, DeployFeeDistributor 
 
         startTime = vm.getBlockTimestamp();
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), startTime, address(coinA), alice, bob, false);
         feeDistributor = IFeeDistributor(proxyAddress);
+        vm.stopPrank();
     }
 
     function testInitialize() public view {

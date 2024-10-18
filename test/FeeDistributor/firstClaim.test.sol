@@ -36,9 +36,12 @@ contract SingleTokenFeeDistributor_FirstClaimTest is Test, DeployFeeDistributor 
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
         // Initialize the distributor with the veToken
+
+        vm.startPrank(admin);
         (address proxyAddress,) =
             deploy(address(veToken), vm.getBlockTimestamp() + THREE_MONTHS, address(rewardToken1), admin, admin, false);
         feeDistributor = IFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         // Lock user tokens in veToken
         createTime = vm.getBlockTimestamp() + 100 * WEEK;
