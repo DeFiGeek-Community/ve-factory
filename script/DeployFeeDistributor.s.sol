@@ -48,8 +48,6 @@ contract DeployFeeDistributor is DeployBase {
         address dictionary = admin.deployDictionary();
         if (output) writeDeployedAddress(dictionary, "FeeDistributor_Dictionary");
 
-        vm.startPrank(admin);
-
         dictionary.use(FeeDistributor.initialize.selector, address(distributor));
         dictionary.use(FeeDistributor.checkpointToken.selector, address(distributor));
         dictionary.use(FeeDistributor.veForAt.selector, address(distributor));
@@ -86,8 +84,6 @@ contract DeployFeeDistributor is DeployBase {
 
         address proxyAddress = dictionary.deployProxy(initializerData);
         if (output) writeDeployedAddress(proxyAddress, "FeeDistributor_Proxy");
-
-        vm.stopPrank();
 
         return (proxyAddress, dictionary);
     }
