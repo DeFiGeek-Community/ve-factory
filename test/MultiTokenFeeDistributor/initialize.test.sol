@@ -28,8 +28,10 @@ contract MultiTokenFeeDistributor_InitializeTest is Test, DeployMultiTokenFeeDis
         token = new SampleToken(1e32);
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
     }
 
     function testInitialize() public view {

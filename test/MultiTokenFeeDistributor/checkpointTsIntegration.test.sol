@@ -33,8 +33,10 @@ contract MultiTokenFeeDistributor_CheckpointTsIntegrationTest is Test, DeployMul
         rewardToken = new SampleToken(1e26);
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         vm.prank(admin);
         feeDistributor.addToken(address(rewardToken), vm.getBlockTimestamp());

@@ -18,8 +18,10 @@ contract MultiTokenFeeDistributor_AdminManagementTest is Test, DeployMultiTokenF
         newAdmin = address(0x2);
         nonAdmin = address(0x3);
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(0), admin, address(0), false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
     }
 
     function testCommitAdmin() public {

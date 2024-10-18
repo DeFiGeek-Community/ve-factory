@@ -37,8 +37,10 @@ contract MultiTokenFeeDistributor_ClaimMultipleTokensTest is Test, DeployMultiTo
 
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         vm.prank(address(feeDistributor));
         failToken = new AlwaysFailToken(1e26);

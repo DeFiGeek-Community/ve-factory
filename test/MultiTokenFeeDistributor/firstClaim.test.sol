@@ -40,8 +40,10 @@ contract MultiTokenFeeDistributor_FirstClaimTest is Test, DeployMultiTokenFeeDis
         // Initialize the veToken
         veToken = new VeToken(address(stakeToken), "veToken", "veTKN");
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         // Lock user tokens in veToken
         createTime = vm.getBlockTimestamp() + 100 * WEEK;

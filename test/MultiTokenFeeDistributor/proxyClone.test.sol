@@ -48,9 +48,11 @@ contract MultiTokenFeeDistributor_ProxyCloneTest is Test, DeployMultiTokenFeeDis
         vm.prank(user1);
         veToken.createLock(amount, createTime);
 
+        vm.startPrank(admin);
         (address proxyAddress, address _dictionary) = deploy(address(veToken), admin, emergencyReturn, false);
         dictionary = _dictionary;
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         cloneScript = new CloneMultiTokenFeeDistributor();
     }

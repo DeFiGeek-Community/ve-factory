@@ -24,8 +24,10 @@ contract MultiTokenFeeDistributor_VeForAtTest is Test, DeployMultiTokenFeeDistri
         token = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         vm.warp(365 * 1 days);
 

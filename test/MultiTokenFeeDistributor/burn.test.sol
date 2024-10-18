@@ -21,8 +21,10 @@ contract MultiTokenFeeDistributor_BurnTest is Test, DeployMultiTokenFeeDistribut
         veToken = new VeToken(address(token), "veToken", "veTKN");
         tokenA = new SampleToken(1e26); // サンプルトークンを1e26発行
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         // トークンを事前に追加しておく
         vm.prank(admin);

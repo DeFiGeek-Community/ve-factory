@@ -19,8 +19,10 @@ contract MultiTokenFeeDistributor_RecoverBalanceTest is Test, DeployMultiTokenFe
         distributor = new MultiTokenFeeDistributor();
         tokenA = new SampleToken(1e26); // サンプルトークンを1e26発行
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(this), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         // トークンを事前に追加しておく
         vm.prank(admin);

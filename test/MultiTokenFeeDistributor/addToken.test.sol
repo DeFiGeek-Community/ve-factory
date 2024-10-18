@@ -19,8 +19,10 @@ contract MultiTokenFeeDistributor_AddTokenTest is Test, DeployMultiTokenFeeDistr
         tokenA = new SampleToken(1e26);
         tokenB = new SampleToken(1e26);
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(this), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         vm.warp(100 weeks);
     }

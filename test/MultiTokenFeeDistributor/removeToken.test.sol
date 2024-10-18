@@ -21,8 +21,10 @@ contract MultiTokenFeeDistributor_RemoveTokenTest is Test, DeployMultiTokenFeeDi
         tokenA = new SampleToken(1e26); // サンプルトークンを1e26発行
         tokenB = new SampleToken(1e26);
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(this), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         // トークンを事前に追加しておく
         vm.prank(admin);

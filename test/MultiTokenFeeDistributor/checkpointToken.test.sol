@@ -28,8 +28,10 @@ contract MultiTokenFeeDistributor_CheckpointTokenTest is Test, DeployMultiTokenF
         coinA = new SampleToken(1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(admin);
         (address proxyAddress,) = deploy(address(veToken), admin, emergencyReturn, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         vm.warp(WEEK * 100);
 

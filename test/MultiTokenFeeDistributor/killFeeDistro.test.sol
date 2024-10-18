@@ -29,8 +29,10 @@ contract MultiTokenFeeDistributor_KillFeeDistroTest is Test, DeployMultiTokenFee
         coinA.transfer(alice, 1e26);
         veToken = new VeToken(address(token), "veToken", "veTKN");
 
+        vm.startPrank(alice);
         (address proxyAddress,) = deploy(address(veToken), alice, bob, false);
         feeDistributor = IMultiTokenFeeDistributor(proxyAddress);
+        vm.stopPrank();
 
         vm.prank(alice);
         feeDistributor.addToken(address(coinA), vm.getBlockTimestamp());
