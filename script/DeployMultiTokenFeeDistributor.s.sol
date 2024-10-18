@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import "forge-std/console.sol";
 import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/MultiTokenFeeDistributorFacade.sol";
-import {UcsDeployLibrary} from "./UcsDeployLibrary.sol";
-import {DeployBase} from "./DeployBase.sol";
+import {UcsDeployLibrary} from "./util/UcsDeployLibrary.sol";
+import {DeployBase} from "./util/DeployBase.sol";
 
 contract DeployMultiTokenFeeDistributor is DeployBase {
     using UcsDeployLibrary for address;
@@ -38,8 +38,6 @@ contract DeployMultiTokenFeeDistributor is DeployBase {
 
         address dictionary = admin.deployDictionary();
         if (output) writeDeployedAddress(dictionary, "MultiTokenFeeDistributor_Dictionary");
-
-        vm.startPrank(admin);
 
         dictionary.use(MultiTokenFeeDistributor.initialize.selector, address(distributor));
         dictionary.use(MultiTokenFeeDistributor.checkpointToken.selector, address(distributor));
@@ -74,16 +72,17 @@ contract DeployMultiTokenFeeDistributor is DeployBase {
         dictionary.use(MultiTokenFeeDistributor.userEpochOf.selector, address(distributor));
         dictionary.use(MultiTokenFeeDistributor.tokensPerWeek.selector, address(distributor));
         dictionary.use(MultiTokenFeeDistributor.veSupply.selector, address(distributor));
-        dictionary.useFacade(address(new MultiTokenFeeDistributorFacade()));
+
+        address facadeAddress = address(new MultiTokenFeeDistributorFacade());
+        if (output) writeDeployedAddress(facadeAddress, "MultiTokenFeeDistributor_Facade");
+        dictionary.useFacade(facadeAddress);
 
         address proxyAddress = dictionary.deployProxy(initializerData);
         if (output) writeDeployedAddress(proxyAddress, "MultiTokenFeeDistributor_Proxy");
-
-        vm.stopPrank();
 
         return (proxyAddress, dictionary);
     }
 }
 
 // デプロイコマンド
-// forge script script/DeployMultiTokenFeeDistributor.s.sol:DeployMultiTokenFeeDistributor --fork-url <RPC_URL> --broadcast --verify -vvvv
+// ｓｈ script/sh/DeployMultiTokenFeeDistributor.sh

@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import "forge-std/console.sol";
 import "src/MultiTokenFeeDistributor.sol";
 import "src/Interfaces/MultiTokenFeeDistributorFacade.sol";
-import {UcsDeployLibrary} from "./UcsDeployLibrary.sol";
-import {DeployBase} from "./DeployBase.sol";
+import {UcsDeployLibrary} from "./util/UcsDeployLibrary.sol";
+import {DeployBase} from "./util/DeployBase.sol";
 
 contract CloneMultiTokenFeeDistributor is DeployBase {
     using UcsDeployLibrary for address;
@@ -46,4 +46,4 @@ contract CloneMultiTokenFeeDistributor is DeployBase {
 }
 
 // デプロイコマンド
-// forge script script/DeployMultiTokenFeeDistributor.s.sol:DeployMultiTokenFeeDistributor --fork-url <RPC_URL> --broadcast --verify -vvvv
+// sh script/sh/CloneMultiTokenFeeDistributor.sh

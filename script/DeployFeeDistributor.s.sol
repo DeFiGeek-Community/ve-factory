@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import "forge-std/console.sol";
 import "src/FeeDistributor.sol";
 import "src/Interfaces/FeeDistributorFacade.sol";
-import {UcsDeployLibrary} from "./UcsDeployLibrary.sol";
-import {DeployBase} from "./DeployBase.sol";
+import {UcsDeployLibrary} from "./util/UcsDeployLibrary.sol";
+import {DeployBase} from "./util/DeployBase.sol";
 
 contract DeployFeeDistributor is DeployBase {
     using UcsDeployLibrary for address;
@@ -79,7 +79,10 @@ contract DeployFeeDistributor is DeployBase {
         dictionary.use(FeeDistributor.userEpochOf.selector, address(distributor));
         dictionary.use(FeeDistributor.tokensPerWeek.selector, address(distributor));
         dictionary.use(FeeDistributor.veSupply.selector, address(distributor));
-        dictionary.useFacade(address(new FeeDistributorFacade()));
+
+        address facadeAddress = address(new FeeDistributorFacade());
+        if (output) writeDeployedAddress(facadeAddress, "FeeDistributor_Facade");
+        dictionary.useFacade(facadeAddress);
 
         address proxyAddress = dictionary.deployProxy(initializerData);
         if (output) writeDeployedAddress(proxyAddress, "FeeDistributor_Proxy");
@@ -91,4 +94,4 @@ contract DeployFeeDistributor is DeployBase {
 }
 
 // Deploy command
-// forge script script/DeployScript.s.sol:DeployFeeDistributor --fork-url <RPC_URL> --broadcast --verify -vvvv
+// sh script/sh/DeployFeeDistributor.sh

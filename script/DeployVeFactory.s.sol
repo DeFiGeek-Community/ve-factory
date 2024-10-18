@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {DeployBase} from "./DeployBase.sol";
+import {DeployBase} from "./util/DeployBase.sol";
 import "openzeppelin-foundry-upgrades/Upgrades.sol";
 import "src/VeFactory.sol";
 
@@ -11,7 +11,10 @@ contract DeployVeFactory is DeployBase {
         address deployerAddress = vm.addr(deployerPrivateKey);
         vm.startBroadcast(deployerPrivateKey);
 
-        deploy(deployerAddress);
+        address proxyAddress = deploy(deployerAddress);
+
+        writeDeployedAddress(proxyAddress, "VeFactory_Proxy");
+        console.log("Deployed VeFactory proxy at:", proxyAddress);
 
         vm.stopBroadcast();
     }
@@ -22,10 +25,9 @@ contract DeployVeFactory is DeployBase {
 
         // UUPSプロキシとしてVeFactoryをデプロイ
         address proxyAddress = Upgrades.deployUUPSProxy("VeFactory.sol", initializerData);
-        // console.log("Deployed VeFactory proxy at:", proxyAddress);
         return proxyAddress;
     }
 }
 
 // Deploy command
-// forge script script/DeployVeFactory.s.sol:DeployVeFactory --fork-url <RPC_URL> --broadcast --verify -vvvv
+// ｓｈ　script/sh/VerifyVeToken.sh
