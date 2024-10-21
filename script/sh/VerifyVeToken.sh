@@ -14,5 +14,14 @@ if [ -z "$CHAIN_ID" ] || [ -z "$ETHERSCAN_API_KEY" ]; then
   exit 1
 fi
 
+# アドレスファイルからVeTokenのアドレスを読み込む
+CHAIN_ID_STR=$(echo $CHAIN_ID | tr -d '\n') # 改行を削除
+ADDRESS_FILE="./deployments/$CHAIN_ID_STR/$VE_TOKEN_NAME"
+if [ ! -f "$ADDRESS_FILE" ]; then
+  echo "VeToken address file not found!"
+  exit 1
+fi
+VETOKEN_ADDRESS=$(cat "$ADDRESS_FILE")
 
-forge verify-contract 0x0651ABE642eFc46a4b9a6027B543eA7f875274f0 src/VeToken.sol:VeToken --chain $CHAIN_ID --etherscan-api-key $ETHERSCAN_API_KEY --num-of-optimizations 200 --watch --constructor-args $(cast abi-encode "constructor(address,string,string)" "0xdca6BcCecd7C25C654DFD80EcF7c63731B12Df5e" "veTXJP" "veTXJP")
+# forge verify-contractコマンドを実行
+forge verify-contract $VETOKEN_ADDRESS src/VeToken.sol:VeToken --chain $CHAIN_ID --etherscan-api-key $ETHERSCAN_API_KEY --num-of-optimizations 200 --watch --constructor-args $(cast abi-encode "constructor(address,string,string)" "$TOKEN_ADDRESS" "$VE_TOKEN_NAME" "$VE_TOKEN_SYMBOL")
