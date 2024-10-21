@@ -22,7 +22,7 @@ contract DeployBase is Script {
 
     function readDeployedAddress(string memory fileName) internal view returns (address) {
         // chainIdを取得
-        uint256 chainId = block.chainid;
+        string memory chainId = vm.toString(block.chainid);
 
         // ファイルからデプロイしたアドレスを読み出す
         string memory path = string(abi.encodePacked(directory, chainId, "/", fileName));
