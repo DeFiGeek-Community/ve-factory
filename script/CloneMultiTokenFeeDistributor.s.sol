@@ -33,12 +33,12 @@ contract CloneMultiTokenFeeDistributor is DeployBase {
         bytes memory initializerData =
             abi.encodeCall(MultiTokenFeeDistributor.initialize, (votingEscrow, admin, emergencyReturn));
 
-        vm.startPrank(admin);
+        // vm.startPrank(admin);
         address cloneProxy = dictionaryAddress.deployProxy(initializerData);
 
         if (output) writeDeployedAddress(cloneProxy, addTimestampToFileName("MultiTokenFeeDistributor_Proxy"));
 
-        vm.stopPrank();
+        // vm.stopPrank();
         if (output) console.log("Deployed MultiTokenFeeDistributor proxy at:", cloneProxy);
 
         return cloneProxy;
