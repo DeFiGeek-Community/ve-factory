@@ -21,6 +21,7 @@ VE_TOKEN_SYMBOL=
 
 veトークンを作成
 - `sh script/sh/CreateVeToken.sh`
+
 veトークンのVerify
 - `sh script/sh/VerifyVeToken.sh`
 
